@@ -3,7 +3,6 @@ package com.springreport.excel2pdf;
 import java.util.List;
 import java.util.Set;
 
-import com.itextpdf.text.pdf.PdfPCell;
 
 /**  
  * @ClassName: ResMobileInfos

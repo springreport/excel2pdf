@@ -161,8 +161,7 @@ public class Excel2Pdf extends PdfTool{
     	document.addAuthor(object.getPrintSettings().getAuthor()==null?"SpringReport":object.getPrintSettings().getAuthor());
     	document.addTitle(object.getPrintSettings().getTitle() == null?"":object.getPrintSettings().getTitle());
     	document.addSubject(object.getPrintSettings().getSubject() == null?"":object.getPrintSettings().getSubject());
-//    	document.addKeywords(object.getPrintSettings().getKeyWords()==null?"":object.getPrintSettings().getKeyWords());//有源码后可以使用该行代码代替下面的固定值
-    	document.addKeywords("SpringReport");//没有源码，为了保留部分版权，该内容设置成固定值
+    	document.addKeywords(object.getPrintSettings().getKeyWords()==null?"":object.getPrintSettings().getKeyWords());
     	float tableHeight = document.getPageSize().getTop() - document.topMargin() - document.bottomMargin();
     	object.setTableHeight(tableHeight);
     	float taleWidth = document.getPageSize().getRight() - document.leftMargin() - document.rightMargin();
@@ -224,9 +223,6 @@ public class Excel2Pdf extends PdfTool{
             }
         }
         
-        /**
-         * 没有源码，水印和表头设置成固定值SpringReport
-         */
         @Override
         public void onEndPage(PdfWriter writer, Document document) {
             //在每页结束的时候把“第x页”信息写道模版指定位置
@@ -242,18 +238,17 @@ public class Excel2Pdf extends PdfTool{
             	printSettings.setWaterMarkShow(2);
             	printSettings.setPageShow(2);
             }
-            ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase("SpringReport", new Font(this.baseFont, 10, Font.NORMAL)), documentWidth/2, document.top() + document.topMargin()/2, 0);
-//            if(printSettings.getPageHeaderShow().intValue() == 1)
-//            {
-//            	if(printSettings.getPageHeaderPosition().intValue() == 1)
-//            	{
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_LEFT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.left(), document.top() + document.topMargin()/2, 0);
-//            	}else if(printSettings.getPageHeaderPosition().intValue() == 2) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), documentWidth/2, document.top() + document.topMargin()/2, 0);
-//            	}else if(printSettings.getPageHeaderPosition().intValue() == 3) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_RIGHT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.right(), document.top()+document.topMargin()/2, 0);
-//            	}
-//            }
+            if(printSettings.getPageHeaderShow().intValue() == 1)
+            {
+            	if(printSettings.getPageHeaderPosition().intValue() == 1)
+            	{
+            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_LEFT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.left(), document.top() + document.topMargin()/2, 0);
+            	}else if(printSettings.getPageHeaderPosition().intValue() == 2) {
+            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), documentWidth/2, document.top() + document.topMargin()/2, 0);
+            	}else if(printSettings.getPageHeaderPosition().intValue() == 3) {
+            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_RIGHT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.right(), document.top()+document.topMargin()/2, 0);
+            	}
+            }
             byteContent.saveState();
             if(printSettings.getPageShow().intValue() == 1)
             {
@@ -267,105 +262,46 @@ public class Excel2Pdf extends PdfTool{
             		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_RIGHT, new Phrase(text, new Font(this.baseFont, 10, Font.NORMAL)), document.right(), document.bottomMargin()/2, 0);
             	}
             }
-            try {
-        		PdfGState gs = new PdfGState();
-        		// 设置填充字体不透明度为0.4f
-                gs.setFillOpacity(0.6f);
-                byteContent.setGState(gs);
-				BaseFont base = BaseFont.createFont("STSongStd-Light", "UniGB-UCS2-H", BaseFont.EMBEDDED);
-				byteContent.beginText();
-            	byteContent.setFontAndSize(base, 48f);
-            	byteContent.setColorFill(BaseColor.LIGHT_GRAY);
-            	byteContent.showTextAligned(Element.ALIGN_CENTER, "SpringReport", documentWidth/2, documentHeight/2, 45);
-            	byteContent.endText();
-			} catch (Exception e) {
-				e.printStackTrace();
-			} 
+            if(printSettings.getWaterMarkShow().intValue() == 1)
+            {
+            	if(printSettings.getWaterMarkType().intValue() == 1)
+            	{
+            		try {
+                		PdfGState gs = new PdfGState();
+                		// 设置填充字体不透明度为0.4f
+                        gs.setFillOpacity(printSettings.getWaterMarkOpacity());
+                        byteContent.setGState(gs);
+    					BaseFont base = BaseFont.createFont("STSongStd-Light", "UniGB-UCS2-H", BaseFont.EMBEDDED);
+    					byteContent.beginText();
+    	            	byteContent.setFontAndSize(base, 36f);
+    	            	byteContent.setColorFill(BaseColor.LIGHT_GRAY);
+    	            	byteContent.showTextAligned(Element.ALIGN_CENTER, printSettings.getWaterMarkContent(), documentWidth/2, documentHeight/2, 45);
+    	            	byteContent.endText();
+    				} catch (Exception e) {
+    					e.printStackTrace();
+    				} 
+            	}else {
+            		try {
+            			PdfGState gs = new PdfGState();
+                		// 设置填充字体不透明度为0.4f
+                        gs.setFillOpacity(printSettings.getWaterMarkOpacity());
+                        byteContent.setGState(gs);
+                        if(this.img == null)
+                        {
+                        	this.img = Image.getInstance(printSettings.getWaterMarkImg());
+                        }
+                        float imgWidth = this.img.getWidth();
+                        this.img.setAbsolutePosition((documentWidth/2-imgWidth/2)>0?documentWidth/2-imgWidth/2:document.leftMargin(), (documentHeight/2-imgWidth/2)>0?documentHeight/2-imgWidth/2:document.bottomMargin());
+                        this.img.setRotationDegrees(45);
+						byteContent.addImage(this.img);
+						byteContent.setColorFill(BaseColor.LIGHT_GRAY);
+					} catch (Exception e) {
+    					e.printStackTrace();
+    				} 
+            	}
+            }
             byteContent.restoreState();
         }
-
-        /**
-         * 有源码可以用该方法替换，水印和表头可以通过前端动态进行配置
-         */
-//        @Override
-//        public void onEndPage(PdfWriter writer, Document document) {
-//            //在每页结束的时候把“第x页”信息写道模版指定位置
-//            PdfContentByte byteContent = writer.getDirectContent();
-//            float documentHeight = document.getPageSize().getHeight();
-//            float documentWidth = document.getPageSize().getWidth();
-//            if(printSettings == null)
-//            {
-//            	printSettings = new PrintSettingsDto();
-//            	printSettings.setPageType(2);
-//            	printSettings.setPageLayout(1);
-//            	printSettings.setPageHeaderShow(2);
-//            	printSettings.setWaterMarkShow(2);
-//            	printSettings.setPageShow(2);
-//            }
-//            if(printSettings.getPageHeaderShow().intValue() == 1)
-//            {
-//            	if(printSettings.getPageHeaderPosition().intValue() == 1)
-//            	{
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_LEFT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.left(), document.top() + document.topMargin()/2, 0);
-//            	}else if(printSettings.getPageHeaderPosition().intValue() == 2) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), documentWidth/2, document.top() + document.topMargin()/2, 0);
-//            	}else if(printSettings.getPageHeaderPosition().intValue() == 3) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_RIGHT, new Phrase(printSettings.getPageHeaderContent(), new Font(this.baseFont, 10, Font.NORMAL)), document.right(), document.top()+document.topMargin()/2, 0);
-//            	}
-//            }
-//            byteContent.saveState();
-//            if(printSettings.getPageShow().intValue() == 1)
-//            {
-//            	String text = writer.getPageNumber() + "";
-//            	if(printSettings.getPagePosition().intValue() == 1)
-//            	{
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_LEFT, new Phrase(text, new Font(this.baseFont, 10, Font.NORMAL)), document.left(), document.bottomMargin()/2, 0);
-//            	}else if(printSettings.getPagePosition().intValue() == 2) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_CENTER, new Phrase(text, new Font(this.baseFont, 10, Font.NORMAL)), documentWidth/2, document.bottomMargin()/2, 0);
-//            	}else if(printSettings.getPagePosition().intValue() == 3) {
-//            		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_RIGHT, new Phrase(text, new Font(this.baseFont, 10, Font.NORMAL)), document.right(), document.bottomMargin()/2, 0);
-//            	}
-//            }
-//            if(printSettings.getWaterMarkShow().intValue() == 1)
-//            {
-//            	if(printSettings.getWaterMarkType().intValue() == 1)
-//            	{
-//            		try {
-//                		PdfGState gs = new PdfGState();
-//                		// 设置填充字体不透明度为0.4f
-//                        gs.setFillOpacity(printSettings.getWaterMarkOpacity());
-//                        byteContent.setGState(gs);
-//    					BaseFont base = BaseFont.createFont("STSongStd-Light", "UniGB-UCS2-H", BaseFont.EMBEDDED);
-//    					byteContent.beginText();
-//    	            	byteContent.setFontAndSize(base, 36f);
-//    	            	byteContent.setColorFill(BaseColor.LIGHT_GRAY);
-//    	            	byteContent.showTextAligned(Element.ALIGN_CENTER, printSettings.getWaterMarkContent(), documentWidth/2, documentHeight/2, 45);
-//    	            	byteContent.endText();
-//    				} catch (Exception e) {
-//    					e.printStackTrace();
-//    				} 
-//            	}else {
-//            		try {
-//            			PdfGState gs = new PdfGState();
-//                		// 设置填充字体不透明度为0.4f
-//                        gs.setFillOpacity(printSettings.getWaterMarkOpacity());
-//                        byteContent.setGState(gs);
-//                        if(this.img == null)
-//                        {
-//                        	this.img = Image.getInstance(printSettings.getWaterMarkImg());
-//                        }
-//                        float imgWidth = this.img.getWidth();
-//                        this.img.setAbsolutePosition((documentWidth/2-imgWidth/2)>0?documentWidth/2-imgWidth/2:document.leftMargin(), (documentHeight/2-imgWidth/2)>0?documentHeight/2-imgWidth/2:document.bottomMargin());
-//                        this.img.setRotationDegrees(45);
-//						byteContent.addImage(this.img);
-//						byteContent.setColorFill(BaseColor.LIGHT_GRAY);
-//					} catch (Exception e) {
-//    					e.printStackTrace();
-//    				} 
-//            	}
-//            }
-//            byteContent.restoreState();
-//        }
         
         public void onCloseDocument(PdfWriter writer, Document document) {
         	
