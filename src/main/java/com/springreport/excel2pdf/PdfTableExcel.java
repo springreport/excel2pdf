@@ -255,6 +255,9 @@ public class PdfTableExcel {
 		                    for (int k = 1; k < colspan2; k++) {
 		                    	int y = j + k;
 		                    	Cell cell2 = row.getCell(y);
+		                    	if (cell2 == null) {
+		                    		cell2 = row.createCell(y);
+				                }
 		                    	if(y >=endy)
 		                    	{
 		                    		for (int l = t; l < pageDivider.size(); l++) {
