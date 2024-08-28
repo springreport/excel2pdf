@@ -9,9 +9,9 @@ import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 
-
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.util.StringUtil;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
@@ -235,7 +235,6 @@ public class PdfTableExcel {
 		                	List<Integer> rgb = this.getColor(background);
 		                	pdfpCell.setBackgroundColor(new BaseColor(rgb.get(0),rgb.get(1),rgb.get(2)));
 		                }
-		                addImageByPOICell(pdfpCell, cell, cw);
 		                addBorderByExcel(pdfpCell, cell.getCellStyle());
 		                // 执行此方法在poi导出为 Workbook 是 SXSSFWorkbook的类型时，此方法会导致转换cell 为""
 		                //cell.setCellType(CellType.STRING);
@@ -312,6 +311,7 @@ public class PdfTableExcel {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
 		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t));
+		                addImageByPOICell(pdfpCell, cell, cw);
 		                if(j == starty)
 		                {
 		                	rowHeight = pdfpCell.getFixedHeight();
@@ -636,7 +636,8 @@ public class PdfTableExcel {
         	return;
         }
     	POIImage poiImage = new POIImage().getCellImage(cell);
-        byte[] bytes = poiImage.getBytes();
+
+    	byte[] bytes = poiImage.getBytes();
         if (bytes != null) {
 //           double cw = cellWidth;
 //           double ch = pdfpCell.getFixedHeight();
@@ -649,8 +650,20 @@ public class PdfTableExcel {
 //           double nw = iw * scale;
 //           double nh = ih - (iw - nw);
 //
-//           POIUtil.scale(bytes , nw  , nh);
-            Image image = Image.getInstance(bytes);
+//        	POIUtil.scale(bytes , nw  , nh);
+//        	byte[] barCodeByte = BarCodeUtil.generateBarcodeImage(cell.getStringCellValue(), 360, 80);
+        	Image image = null;
+        	XSSFFont font = (XSSFFont) this.excel.wb.getFontAt(cell.getCellStyle().getFontIndex());
+        	String ff = font.getFontName();//字体名称
+        	if(ff != null && ff.contains("barCode128")) {
+        		byte[] barCodeByte = BarCodeUtil.generateBarcodeImage(cell.getStringCellValue(), (int)(cellWidth*1.333), (int)(pdfpCell.getFixedHeight()*1.333));
+        		image = Image.getInstance(barCodeByte);
+        	}else if(ff != null && ff.contains("qrCode")) {
+//        		byte[] qrCodeByte = QRCodeUtil.generateQRCodeImage(cell.getStringCellValue(), (int)(cellWidth*1.333), (int)(pdfpCell.getFixedHeight()*1.333));
+        		image = Image.getInstance(bytes);
+        	}else {
+        		image = Image.getInstance(bytes);
+        	}
             pdfpCell.setImage(image);
         }
     }
