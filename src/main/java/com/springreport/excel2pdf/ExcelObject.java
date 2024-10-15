@@ -111,8 +111,15 @@ public class ExcelObject {
 	 */  
 	private Map<String, String> backImages;
 	
+	/**  
+     * @Fields wrapText : 自动换行的行标记
+     * @author caiyang
+     * @date 2024-10-13 03:50:46 
+     */  
+    private Map<Integer, Integer> wrapText;
+	
     
-    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages){
+    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<Integer, Integer> wrapText){
         this.anchorName = anchorName;
         this.inputStream = inputStream;
         this.excel = new Excel(this.inputStream,this.sheetIndex);
@@ -127,6 +134,7 @@ public class ExcelObject {
         this.printSettings = printSettings;
         this.imageInfos = imageInfos;
         this.backImages = backImages;
+        this.wrapText = wrapText;
     }
     
     public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,Integer sheetIndex,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages){
@@ -292,6 +300,14 @@ public class ExcelObject {
 
 	public void setBackImages(Map<String, String> backImages) {
 		this.backImages = backImages;
+	}
+
+	public Map<Integer, Integer> getWrapText() {
+		return wrapText;
+	}
+
+	public void setWrapText(Map<Integer, Integer> wrapText) {
+		this.wrapText = wrapText;
 	}
 
 //	public Map<String, Integer> getMaxCoordinate() {

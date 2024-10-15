@@ -18,6 +18,7 @@ import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
+import java.awt.FontMetrics;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -219,7 +220,7 @@ public class PdfTableExcel {
 		                			addBorderByExcel(pdfpCell, splitMergeCells.get(i+"_"+j));
 		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
 		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
-		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t));
+		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle()));
 		                			cells.add(pdfpCell);
 		                		}
 		                		continue;
@@ -310,7 +311,7 @@ public class PdfTableExcel {
 //			            }else {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
-		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t));
+		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle()));
 		                addImageByPOICell(pdfpCell, cell, cw);
 		                if(j == starty)
 		                {
@@ -668,7 +669,8 @@ public class PdfTableExcel {
         }
     }
     
-    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page) {
+    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page,float[] cws,XSSFCellStyle style) {
+    	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
     	for (int i = 0; i < rowSpan; i++) {
@@ -678,16 +680,29 @@ public class PdfTableExcel {
     			continue;
     		}else {
     			float poiHeight = 0;
+    			row = sheet.getRow(rowNum+i);
     			if(rowHeightsMap.containsKey(rowNum+i))
     			{
     				poiHeight = rowHeightsMap.get(rowNum+i);
     			}else {
-    				row = sheet.getRow(rowNum+i);
-            		if(row == null) {
-            			poiHeight = sheet.getDefaultRowHeightInPoints();
-            		}else {
-            			poiHeight = row.getHeightInPoints();
-            		}
+    				if(this.excelObject.getWrapText().containsKey(rowNum+i)) {
+    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
+    					int chartWidth = fm.charWidth('国');
+    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
+    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
+    					if(poiHeight > this.excelObject.getTableHeight()) {
+    						poiHeight = this.excelObject.getTableHeight();
+    					}else if(poiHeight < row.getHeightInPoints()) {
+    						poiHeight = sheet.getDefaultRowHeightInPoints();
+    					}
+    				}else {
+                		if(row == null) {
+                			poiHeight = sheet.getDefaultRowHeightInPoints();
+                		}else {
+                			poiHeight = row.getHeightInPoints();
+                		}
+    				}
+    				
             		if(page == 0) {
             			rowHeightsMap.put(rowNum+i, poiHeight);
             		}
