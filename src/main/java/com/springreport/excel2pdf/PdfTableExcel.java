@@ -19,6 +19,8 @@ import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
 import java.awt.FontMetrics;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
@@ -686,10 +688,17 @@ public class PdfTableExcel {
     				poiHeight = rowHeightsMap.get(rowNum+i);
     			}else {
     				if(this.excelObject.getWrapText().containsKey(rowNum+i)) {
-    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
-    					int chartWidth = fm.charWidth('国');
+//    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
+//    					int chartWidth = fm.charWidth('国');
+//    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
+//    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
+    					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+    					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
+    					String wordContent = "国";
+    					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
+    					int chartWidth = rec.width;
     					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
-    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
+    					poiHeight = (float) (rec.height * width/(this.excelObject.getTableWidth()/cws.length));
     					if(poiHeight > this.excelObject.getTableHeight()) {
     						poiHeight = this.excelObject.getTableHeight();
     					}else if(poiHeight < row.getHeightInPoints()) {
