@@ -659,10 +659,29 @@ public class PdfTableExcel {
         	XSSFFont font = (XSSFFont) this.excel.wb.getFontAt(cell.getCellStyle().getFontIndex());
         	String ff = font.getFontName();//字体名称
         	if(ff != null && ff.contains("barCode128")) {
-        		byte[] barCodeByte = BarCodeUtil.generateBarcodeImage(cell.getStringCellValue(), (int)(cellWidth*1.333), (int)(pdfpCell.getFixedHeight()*1.333));
+        		int rowspan = 1;
+        		int colspan = 1;
+        		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex());
+        		if(range != null) {
+        			rowspan = range.getLastRow() - range.getFirstRow() + 1;
+        			colspan = range.getLastColumn() - range.getFirstColumn() + 1;
+        		}
+        		int width = (int)(cellWidth*1.333*colspan);
+        		if(width > this.excelObject.getTableWidth()) {
+        			width =  (int) this.excelObject.getTableWidth();
+        		}
+        		int height = (int)(pdfpCell.getFixedHeight()*1);
+        		byte[] barCodeByte = BarCodeUtil.generateBarcodeImage(cell.getStringCellValue(), width, (int)pdfpCell.getFixedHeight());
         		image = Image.getInstance(barCodeByte);
         	}else if(ff != null && ff.contains("qrCode")) {
-//        		byte[] qrCodeByte = QRCodeUtil.generateQRCodeImage(cell.getStringCellValue(), (int)(cellWidth*1.333), (int)(pdfpCell.getFixedHeight()*1.333));
+//        		int rowspan = 1;
+//        		int colspan = 1;
+//        		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex());
+//        		if(range != null) {
+//        			rowspan = range.getLastRow() - range.getFirstRow() + 1;
+//        			colspan = range.getLastColumn() - range.getFirstColumn() + 1;
+//        		}
+//        		byte[] qrCodeByte = QRCodeUtil.generateQRCodeImage(cell.getStringCellValue(), (int)(cellWidth*1.333*colspan), (int)(pdfpCell.getFixedHeight()/7.5*rowspan));
         		image = Image.getInstance(bytes);
         	}else {
         		image = Image.getInstance(bytes);
