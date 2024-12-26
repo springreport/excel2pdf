@@ -87,6 +87,13 @@ public class PrintSettingsDto {
 	 * @date 2024-02-26 04:45:47 
 	 */  
 	private JSONArray pageDivider;
+	
+	/**  
+	 * @Fields startPage : 起始页
+	 * @author caiyang
+	 * @date 2024-12-25 01:54:46 
+	 */  
+	private Integer startPage = 1;
 
 	public Integer getPageType() {
 		return pageType;
@@ -230,5 +237,13 @@ public class PrintSettingsDto {
 
 	public void setPageDivider(JSONArray pageDivider) {
 		this.pageDivider = pageDivider;
+	}
+
+	public Integer getStartPage() {
+		return startPage;
+	}
+
+	public void setStartPage(Integer startPage) {
+		this.startPage = startPage;
 	}
 }

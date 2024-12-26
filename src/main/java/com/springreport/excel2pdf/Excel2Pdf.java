@@ -252,7 +252,7 @@ public class Excel2Pdf extends PdfTool{
             byteContent.saveState();
             if(printSettings.getPageShow().intValue() == 1)
             {
-            	String text = writer.getPageNumber() + "";
+            	String text = (writer.getPageNumber()+printSettings.getStartPage()-1) + "";
             	if(printSettings.getPagePosition().intValue() == 1)
             	{
             		ColumnText.showTextAligned(writer.getDirectContent(), Element.ALIGN_LEFT, new Phrase(text, new Font(this.baseFont, 10, Font.NORMAL)), document.left(), document.bottomMargin()/2, 0);
