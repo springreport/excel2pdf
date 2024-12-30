@@ -94,6 +94,15 @@ public class PrintSettingsDto {
 	 * @date 2024-12-25 01:54:46 
 	 */  
 	private Integer startPage = 1;
+	
+	/** fixed_header - 固定表头 1是 2否 */
+    private Integer fixedHeader = 2;
+
+    /** fixed_header_start - 固定表头起始行 */
+    private Integer fixedHeaderStart = 1;
+
+    /** fixed_header_end - 固定表头结束行 */
+    private Integer fixedHeaderEnd = 1;
 
 	public Integer getPageType() {
 		return pageType;
@@ -245,5 +254,29 @@ public class PrintSettingsDto {
 
 	public void setStartPage(Integer startPage) {
 		this.startPage = startPage;
+	}
+
+	public Integer getFixedHeader() {
+		return fixedHeader;
+	}
+
+	public void setFixedHeader(Integer fixedHeader) {
+		this.fixedHeader = fixedHeader;
+	}
+
+	public Integer getFixedHeaderStart() {
+		return fixedHeaderStart;
+	}
+
+	public void setFixedHeaderStart(Integer fixedHeaderStart) {
+		this.fixedHeaderStart = fixedHeaderStart;
+	}
+
+	public Integer getFixedHeaderEnd() {
+		return fixedHeaderEnd;
+	}
+
+	public void setFixedHeaderEnd(Integer fixedHeaderEnd) {
+		this.fixedHeaderEnd = fixedHeaderEnd;
 	}
 }

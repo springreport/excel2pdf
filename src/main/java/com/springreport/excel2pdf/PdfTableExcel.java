@@ -93,6 +93,22 @@ public class PdfTableExcel {
         PdfContentByte canvas = this.excelObject.getWriter().getDirectContent();
         JSONArray pageDivider = null;
         Map<Integer, Integer> pageRows = new HashMap<>();
+        int fixedHeader = this.excelObject.getPrintSettings().getFixedHeader().intValue();
+        int fixedHeaderStart = 0;
+        if(this.excelObject.getPrintSettings().getFixedHeaderStart() != null) {
+        	fixedHeaderStart = this.excelObject.getPrintSettings().getFixedHeaderStart().intValue();
+        }
+        int fixedHeaderEnd = 0;
+        if(this.excelObject.getPrintSettings().getFixedHeaderEnd() != null) {
+        	fixedHeaderEnd = this.excelObject.getPrintSettings().getFixedHeaderEnd().intValue();
+        }
+        int headerRows = 0;
+        if(fixedHeader == 1) {
+        	headerRows = (fixedHeaderEnd - this.excelObject.getStartx())-(fixedHeaderStart - this.excelObject.getStartx())+1;
+        	if(headerRows < 1) {
+        		headerRows = 1;
+        	}
+        }
         if(this.excelObject.getPrintSettings().getHorizontalPage().intValue() == 1)
         {//横向分页
         	pageDivider = this.excelObject.getPrintSettings().getPageDivider();
@@ -365,6 +381,9 @@ public class PdfTableExcel {
 	                	if(pageRows.containsKey(i))
 	                	{
 	                		PdfPTable table = new PdfPTable(widths);
+//	                		if(fixedHeader == 1) {
+//	        					table.setHeaderRows(headerRows);
+//	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
 	            		    for (PdfPCell pdfpCell : cells) {
@@ -385,6 +404,9 @@ public class PdfTableExcel {
 	            		    cells = new ArrayList<PdfPCell>();
 	                	}else if(i == this.excelObject.getEndx()) {
 	                		PdfPTable table = new PdfPTable(widths);
+//	                		if(fixedHeader == 1) {
+//	        					table.setHeaderRows(headerRows);
+//	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
 	            		    for (PdfPCell pdfpCell : cells) {
@@ -409,6 +431,9 @@ public class PdfTableExcel {
 			if(t == 0)
 			{
 				PdfPTable table = new PdfPTable(widths);
+				if(fixedHeader == 1) {
+					table.setHeaderRows(headerRows);
+				}
 				table.setTotalWidth(excelObject.getTableWidth());
 			    table.setWidthPercentage(100);
 			    for (PdfPCell pdfpCell : cells) {
