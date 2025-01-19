@@ -756,7 +756,9 @@ public class PdfTableExcel {
                 			poiHeight = row.getHeightInPoints();
                 		}
     				}
-    				
+//    				if(rowSpan > 30) {
+//    					poiHeight = poiHeight / 2;
+//    				}
             		if(page == 0) {
             			if(rowHeightsMap.containsKey(rowNum+i)) {
             				if(poiHeight > rowHeightsMap.get(rowNum+i)) {
