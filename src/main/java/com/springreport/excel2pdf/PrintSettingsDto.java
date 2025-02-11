@@ -103,6 +103,21 @@ public class PrintSettingsDto {
 
     /** fixed_header_end - 固定表头结束行 */
     private Integer fixedHeaderEnd = 1;
+    
+    /** custom_margin - 自定义页边距 1是 2否 */
+    private Integer customMargin = 2;
+
+    /** left_margin - 左边距 */
+    private Integer leftMargin = 36;
+
+    /** right_margin - 右边距 */
+    private Integer rightMargin = 36;
+
+    /** top_margin - 上边距 */
+    private Integer topMargin = 36;
+
+    /** bottom_margin - 下边距 */
+    private Integer bottomMargin = 36;
 
 	public Integer getPageType() {
 		return pageType;
@@ -278,5 +293,45 @@ public class PrintSettingsDto {
 
 	public void setFixedHeaderEnd(Integer fixedHeaderEnd) {
 		this.fixedHeaderEnd = fixedHeaderEnd;
+	}
+
+	public Integer getCustomMargin() {
+		return customMargin;
+	}
+
+	public void setCustomMargin(Integer customMargin) {
+		this.customMargin = customMargin;
+	}
+
+	public Integer getLeftMargin() {
+		return leftMargin;
+	}
+
+	public void setLeftMargin(Integer leftMargin) {
+		this.leftMargin = leftMargin;
+	}
+
+	public Integer getRightMargin() {
+		return rightMargin;
+	}
+
+	public void setRightMargin(Integer rightMargin) {
+		this.rightMargin = rightMargin;
+	}
+
+	public Integer getTopMargin() {
+		return topMargin;
+	}
+
+	public void setTopMargin(Integer topMargin) {
+		this.topMargin = topMargin;
+	}
+
+	public Integer getBottomMargin() {
+		return bottomMargin;
+	}
+
+	public void setBottomMargin(Integer bottomMargin) {
+		this.bottomMargin = bottomMargin;
 	}
 }

@@ -128,6 +128,10 @@ public class Excel2Pdf extends PdfTool{
 				getDocument().setPageSize(PageSize.A4);//纵向pdf
 				break;
 			}
+    		if(this.objects.get(0).getPrintSettings().getCustomMargin().intValue() == 1) {
+    			getDocument().setMargins(this.objects.get(0).getPrintSettings().getLeftMargin(), this.objects.get(0).getPrintSettings().getRightMargin(),
+    					this.objects.get(0).getPrintSettings().getTopMargin(), this.objects.get(0).getPrintSettings().getBottomMargin());
+    		}
     	}else {
     		getDocument().setPageSize(PageSize.A4);//纵向pdf
     	}

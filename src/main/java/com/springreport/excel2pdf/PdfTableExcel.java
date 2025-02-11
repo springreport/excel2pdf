@@ -1189,6 +1189,11 @@ public class PdfTableExcel {
     }
     
     private void drawPicture(Map<String, Map<String, Object>> imageInfos,float[] widths, Map<Integer, Float> rowHeightsMap,PdfContentByte canvas,int starty) throws Exception{
+    	float totalWidth = 0;
+    	for (int i = 0; i < widths.length; i++) {
+    		totalWidth = totalWidth + widths[i];
+		}
+    	float ratio = this.excelObject.getTableWidth()/totalWidth;
     	for(String mapKey : imageInfos.keySet()){
     		Map<String, Object> value = imageInfos.get(mapKey);
     		float imageHeight = 0;
@@ -1219,15 +1224,16 @@ public class PdfTableExcel {
     		Image background = Image.getInstance((byte[])value.get("pictureBytes"));
     		for (int i = col1; i <= col2; i++) {
     			if(i == col1) {
-    				dx1 = widths[i-starty] * dx1Percent;
-    				imageWidth = imageWidth + widths[i-starty] - dx1;
+    				dx1 = widths[i-starty]*ratio * dx1Percent;
+    				imageWidth = imageWidth + widths[i-starty]*ratio - dx1;
     			}else if(i == col2) {
-    				dx2 = widths[i-starty] * dx2Percent;
+    				dx2 = widths[i-starty]*ratio * dx2Percent;
     				imageWidth = imageWidth + dx2;
     			}else {
-    				imageWidth = imageWidth + widths[i-starty];
+    				imageWidth = imageWidth + widths[i-starty]*ratio;
     			}
 			}
+    		
     		for (int i = row1; i <= row2; i++) {
     			if(i == row1) {
     				dy1 = rowHeightsMap.get(i) * dy1Percent;
