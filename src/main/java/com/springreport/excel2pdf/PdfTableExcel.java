@@ -637,12 +637,21 @@ public class PdfTableExcel {
         Object val = "";
         try {
             if (cell != null) {
-                if (cell.getCellType() == CellType.NUMERIC || cell.getCellType() == CellType.FORMULA) {
+                if (cell.getCellType() == CellType.NUMERIC) {
                     val = cell.getNumericCellValue();
                     DataFormatter formatter = new DataFormatter();
                     final CellStyle cellStyle = cell.getCellStyle();
                     val = formatter.formatRawCellContents(cell.getNumericCellValue(), cellStyle.getDataFormat(), cellStyle.getDataFormatString());
-                } else if (cell.getCellType() == CellType.STRING) {
+                }else if(cell.getCellType() == CellType.FORMULA) {
+                	CellType resultType = cell.getCachedFormulaResultType();
+                	if(resultType == CellType.NUMERIC) {
+                		val = cell.getNumericCellValue();
+                	}else if(resultType == CellType.STRING) {
+                		val = cell.getStringCellValue();
+                	}else if(resultType == CellType.BOOLEAN) {
+                		val = cell.getBooleanCellValue();
+                	}
+                }else if (cell.getCellType() == CellType.STRING) {
                     val = cell.getStringCellValue();
                 } else if (cell.getCellType() == CellType.BOOLEAN) {
                     val = cell.getBooleanCellValue();
@@ -830,8 +839,10 @@ public class PdfTableExcel {
 
     protected Font getFontByExcel(XSSFCellStyle style) {
     	short fontSize = 8;
+    	String fontName = "";
     	try {
     		fontSize = style.getFont().getFontHeightInPoints();
+    		fontName = style.getFont().getFontName();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -842,7 +853,7 @@ public class PdfTableExcel {
         	List<Integer> rgb = this.getColor(color);
         	baseColor = new BaseColor(rgb.get(0),rgb.get(1),rgb.get(2));
         }
-        Font result = new Font(Resource.BASE_FONT_CHINESE, fontSize, Font.NORMAL,baseColor==null?BaseColor.BLACK:baseColor);
+        Font result = new Font(Resource.getFont(fontName), fontSize, Font.NORMAL,baseColor==null?BaseColor.BLACK:baseColor);
         org.apache.poi.ss.usermodel.Font font = style.getFont();
 
         if (font.getBold()) {
