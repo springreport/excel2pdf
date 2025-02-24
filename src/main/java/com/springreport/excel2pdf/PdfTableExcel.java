@@ -238,7 +238,7 @@ public class PdfTableExcel {
 		                			addBorderByExcel(pdfpCell, splitMergeCells.get(i+"_"+j));
 		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
 		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
-		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty));
+		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell));
 		                			cells.add(pdfpCell);
 		                		}
 		                		continue;
@@ -329,7 +329,7 @@ public class PdfTableExcel {
 //			            }else {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
-		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty));
+		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell));
 		                addImageByPOICell(pdfpCell, cell, cw);
 		                if(j == starty)
 		                {
@@ -724,7 +724,7 @@ public class PdfTableExcel {
         }
     }
     
-    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page,float[] cws,XSSFCellStyle style,int colNum,int starty) {
+    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page,float[] cws,XSSFCellStyle style,int colNum,int starty,PdfPCell cell) {
     	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
@@ -746,13 +746,21 @@ public class PdfTableExcel {
 //    					int chartWidth = fm.charWidth('国');
 //    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
 //    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
+    					int ls = 0;
+    					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+    						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+    						cell.setLeading(ls, 1f);
+    					}
     					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
     					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     					String wordContent = "国";
     					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
     					int chartWidth = rec.width;
     					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"");
-    					poiHeight = (float) (rec.height * width/(this.excelObject.getTableWidth()/cws.length));
+    					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
+    					if(ls > 0) {
+    						poiHeight = poiHeight + rec.height+ls;
+    					}
     					if(poiHeight > this.excelObject.getTableHeight()) {
     						poiHeight = this.excelObject.getTableHeight();
     					}else if(poiHeight < row.getHeightInPoints()) {
