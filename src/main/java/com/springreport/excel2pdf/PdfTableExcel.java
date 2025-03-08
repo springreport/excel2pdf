@@ -112,12 +112,17 @@ public class PdfTableExcel {
         if(this.excelObject.getPrintSettings().getHorizontalPage().intValue() == 1)
         {//横向分页
         	pageDivider = this.excelObject.getPrintSettings().getPageDivider();
-        	int last = pageDivider.getIntValue(pageDivider.size() -1);
-        	if(last > this.excelObject.getEndy())
-        	{
-        		pageDivider.set(pageDivider.size() -1, this.excelObject.getEndy());
-        	}else if(last < this.excelObject.getEndy()) {
-        		pageDivider.add(this.excelObject.getEndy());
+        	if(pageDivider!=null && pageDivider.size() > 0) {
+        		int last = pageDivider.getIntValue(pageDivider.size() -1);
+            	if(last > this.excelObject.getEndy())
+            	{
+            		pageDivider.set(pageDivider.size() -1, this.excelObject.getEndy());
+            	}else if(last < this.excelObject.getEndy()) {
+            		pageDivider.add(this.excelObject.getEndy());
+            	}
+        	}else {
+        		pageDivider = new JSONArray();
+            	pageDivider.add(this.excelObject.getEndy());
         	}
         }else {
         	pageDivider = new JSONArray();
@@ -740,7 +745,7 @@ public class PdfTableExcel {
     			{
 //    				poiHeight = rowHeightsMap.get(rowNum+i);
     			}else {
-    				if(this.excelObject.getWrapText().containsKey((rowNum+i)+"") && this.excelObject.getWrapText().containsKey("row_"+(rowNum+i))
+    				if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"") && this.excelObject.getWrapText().containsKey("row_"+(rowNum+i))
     						&& this.excelObject.getWrapText().get("row_"+(rowNum+i)) == colNum) {
 //    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
 //    					int chartWidth = fm.charWidth('国');
