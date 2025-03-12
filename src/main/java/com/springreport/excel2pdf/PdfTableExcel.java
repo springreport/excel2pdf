@@ -741,57 +741,97 @@ public class PdfTableExcel {
     		}else {
     			float poiHeight = 0;
     			row = sheet.getRow(rowNum+i);
-    			if(rowHeightsMap.containsKey(rowNum+i))
-    			{
+//    			if(rowHeightsMap.containsKey(rowNum+i))
+//    			{
 //    				poiHeight = rowHeightsMap.get(rowNum+i);
-    			}else {
-    				if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"") && this.excelObject.getWrapText().containsKey("row_"+(rowNum+i))
-    						&& this.excelObject.getWrapText().get("row_"+(rowNum+i)) == colNum) {
-//    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
-//    					int chartWidth = fm.charWidth('国');
-//    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
-//    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
-    					int ls = 0;
-    					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
-    						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
-    						cell.setLeading(ls, 1f);
-    					}
-    					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-    					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
-    					String wordContent = "国";
-    					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
-    					int chartWidth = rec.width;
-    					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"");
-    					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
-    					if(ls > 0) {
-    						poiHeight = poiHeight + rec.height+ls;
-    					}
-    					if(poiHeight > this.excelObject.getTableHeight()) {
-    						poiHeight = this.excelObject.getTableHeight();
-    					}else if(poiHeight < row.getHeightInPoints()) {
-    						poiHeight = sheet.getDefaultRowHeightInPoints();
-    					}
-    				}else {
-                		if(row == null) {
-                			poiHeight = sheet.getDefaultRowHeightInPoints();
-                		}else {
-                			poiHeight = row.getHeightInPoints();
-                		}
-    				}
-//    				if(rowSpan > 30) {
-//    					poiHeight = poiHeight / 2;
+//    				int ls = 0;
+//    				if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+//						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+//						cell.setLeading(ls, 1f);
+//					}
+//    			}else {
+//    				if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
+////    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
+////    					int chartWidth = fm.charWidth('国');
+////    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
+////    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
+//    					int ls = 0;
+//    					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+//    						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+//    						cell.setLeading(ls, 1f);
+//    					}
+//    					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+//    					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
+//    					String wordContent = "国";
+//    					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
+//    					int chartWidth = rec.width;
+//    					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"_"+colNum);
+//    					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
+//    					if(ls > 0) {
+//    						poiHeight = poiHeight + rec.height+ls;
+//    					}
+//    					if(poiHeight > this.excelObject.getTableHeight()) {
+//    						poiHeight = this.excelObject.getTableHeight();
+//    					}else if(poiHeight < row.getHeightInPoints()) {
+//    						poiHeight = sheet.getDefaultRowHeightInPoints();
+//    					}
+//    				}else {
+//                		if(row == null) {
+//                			poiHeight = sheet.getDefaultRowHeightInPoints();
+//                		}else {
+//                			poiHeight = row.getHeightInPoints();
+//                		}
 //    				}
-            		if(page == 0) {
-            			if(rowHeightsMap.containsKey(rowNum+i)) {
-            				if(poiHeight > rowHeightsMap.get(rowNum+i)) {
-            					rowHeightsMap.put(rowNum+i, poiHeight);
-            				}
-            			}else {
-            				rowHeightsMap.put(rowNum+i, poiHeight);
-            			}
+////    				if(rowSpan > 30) {
+////    					poiHeight = poiHeight / 2;
+////    				}
+//            		if(page == 0) {
+//            			if(rowHeightsMap.containsKey(rowNum+i)) {
+//            				if(poiHeight > rowHeightsMap.get(rowNum+i)) {
+//            					rowHeightsMap.put(rowNum+i, poiHeight);
+//            				}
+//            			}else {
+//            				rowHeightsMap.put(rowNum+i, poiHeight);
+//            			}
+//            		}
+//    			}
+    			if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
+					int ls = 0;
+					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+						cell.setLeading(ls, 1f);
+					}
+					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
+					String wordContent = "国";
+					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
+					int chartWidth = rec.width;
+					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"_"+colNum);
+					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
+					if(ls > 0) {
+						poiHeight = poiHeight + rec.height+ls;
+					}
+					if(poiHeight > this.excelObject.getTableHeight()) {
+						poiHeight = this.excelObject.getTableHeight();
+					}else if(poiHeight < row.getHeightInPoints()) {
+						poiHeight = sheet.getDefaultRowHeightInPoints();
+					}
+				}else {
+            		if(row == null) {
+            			poiHeight = sheet.getDefaultRowHeightInPoints();
+            		}else {
+            			poiHeight = row.getHeightInPoints();
             		}
-    			}
-    			
+				}
+        		if(page == 0) {
+        			if(rowHeightsMap.containsKey(rowNum+i)) {
+        				if(poiHeight > rowHeightsMap.get(rowNum+i)) {
+        					rowHeightsMap.put(rowNum+i, poiHeight);
+        				}
+        			}else {
+        				rowHeightsMap.put(rowNum+i, poiHeight);
+        			}
+        		}
         		pixel = pixel + poiHeight;
     		}
 		}
