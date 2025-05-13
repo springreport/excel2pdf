@@ -11,14 +11,12 @@ import com.itextpdf.text.pdf.PdfPTable;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.util.StringUtil;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 
-import java.awt.FontMetrics;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
@@ -243,7 +241,7 @@ public class PdfTableExcel {
 		                			addBorderByExcel(pdfpCell, splitMergeCells.get(i+"_"+j));
 		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
 		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
-		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell));
+		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,splitMergeCellsColSpan.get(i+"_"+j)));
 		                			cells.add(pdfpCell);
 		                		}
 		                		continue;
@@ -334,7 +332,7 @@ public class PdfTableExcel {
 //			            }else {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
-		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell));
+		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
 		                addImageByPOICell(pdfpCell, cell, cw);
 		                if(j == starty)
 		                {
@@ -639,6 +637,9 @@ public class PdfTableExcel {
      * @return 单元格值
      */
     public Object getCellValue(Cell cell) {
+    	if(cell.getRowIndex() == 3) {
+    		System.err.println();
+    	};
         Object val = "";
         try {
             if (cell != null) {
@@ -651,6 +652,7 @@ public class PdfTableExcel {
                 	CellType resultType = cell.getCachedFormulaResultType();
                 	if(resultType == CellType.NUMERIC) {
                 		val = cell.getNumericCellValue();
+                		val = LuckysheetUtil.formatValue(cell.getCellStyle().getDataFormatString(), val);
                 	}else if(resultType == CellType.STRING) {
                 		val = cell.getStringCellValue();
                 	}else if(resultType == CellType.BOOLEAN) {
@@ -729,7 +731,7 @@ public class PdfTableExcel {
         }
     }
     
-    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page,float[] cws,XSSFCellStyle style,int colNum,int starty,PdfPCell cell) {
+    protected float getPixelHeight(int rowSpan,int rowNum,Sheet sheet,JSONObject rowhidden,Map<Integer, Float> rowHeightsMap,int page,float[] cws,XSSFCellStyle style,int colNum,int starty,PdfPCell cell,int colSpan) {
     	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
@@ -807,14 +809,15 @@ public class PdfTableExcel {
 					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
 					int chartWidth = rec.width;
 					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"_"+colNum);
-					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
-					if(ls > 0) {
-						poiHeight = poiHeight + rec.height+ls;
-					}
+					float rows = width/(this.excelObject.getTableWidth()/cws.length*colSpan);
+					poiHeight = (float) ((rec.height+ls) * rows);
+//					if(ls > 0) {
+//						poiHeight = poiHeight + rec.height+ls;
+//					}
 					if(poiHeight > this.excelObject.getTableHeight()) {
 						poiHeight = this.excelObject.getTableHeight();
 					}else if(poiHeight < row.getHeightInPoints()) {
-						poiHeight = sheet.getDefaultRowHeightInPoints();
+						poiHeight = row.getHeightInPoints();
 					}
 				}else {
             		if(row == null) {
