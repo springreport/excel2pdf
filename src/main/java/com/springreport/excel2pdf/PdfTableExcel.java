@@ -637,9 +637,6 @@ public class PdfTableExcel {
      * @return 单元格值
      */
     public Object getCellValue(Cell cell) {
-    	if(cell.getRowIndex() == 3) {
-    		System.err.println();
-    	};
         Object val = "";
         try {
             if (cell != null) {
