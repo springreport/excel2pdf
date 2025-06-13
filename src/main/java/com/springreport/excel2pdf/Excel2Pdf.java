@@ -136,6 +136,7 @@ public class Excel2Pdf extends PdfTool{
     		getDocument().setPageSize(PageSize.A4);//纵向pdf
     	}
         PdfWriter writer = PdfWriter.getInstance(getDocument(), os);
+        writer.setPdfVersion(PdfWriter.VERSION_1_5);
         writer.setPageEvent(new PDFPageEvent(this.objects.get(0).getPrintSettings()));
         this.objects.get(0).setWriter(writer);
         //Open document
