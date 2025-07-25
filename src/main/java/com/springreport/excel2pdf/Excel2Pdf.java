@@ -143,7 +143,7 @@ public class Excel2Pdf extends PdfTool{
         getDocument().open();
         //Single one
         if(this.objects.size() <= 1){
-        	List<PdfPTable> tables = this.toCreatePdfTable(this.objects.get(0) ,  getDocument());
+        	List<PdfPTable> tables = this.toCreatePdfTable(this.objects.get(0),getDocument());
         	for (int i = 0; i < tables.size(); i++) {
         		getDocument().add(tables.get(i));
         		getDocument().newPage();

@@ -1,7 +1,10 @@
 package com.springreport.excel2pdf;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import org.apache.poi.ss.usermodel.Cell;
 
 
 /**  
@@ -30,7 +33,7 @@ public class ResMobileInfos {
 	 * @author caiyang
 	 * @date 2023-07-10 07:41:17 
 	 */  
-	private Set<String> mergeCells;
+	private Map<String, Cell> mergeCells;
 	
 	/**  
 	 * @Fields emptyRows : 空行
@@ -55,11 +58,11 @@ public class ResMobileInfos {
 		this.imageInfos = imageInfos;
 	}
 
-	public Set<String> getMergeCells() {
+	public Map<String, Cell> getMergeCells() {
 		return mergeCells;
 	}
 
-	public void setMergeCells(Set<String> mergeCells) {
+	public void setMergeCells(Map<String, Cell> mergeCells) {
 		this.mergeCells = mergeCells;
 	}
 

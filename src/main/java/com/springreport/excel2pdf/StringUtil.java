@@ -1,5 +1,6 @@
 package com.springreport.excel2pdf;
 
+
 /**  
  * @ClassName: StringUtil
  * @Description: 工具类
@@ -33,4 +34,27 @@ public class StringUtil {
 		}
 		return true;
 	}
+	
+	/**  
+     * @MethodName: countChineseCharaceters
+     * @Description: 统计字符串中中文字符的数量
+     * @author caiyang
+     * @param Str
+     * @return boolean
+     * @date 2025-07-24 09:28:26 
+     */ 
+    public static int countChineseCharaceters(String str) {
+    	int count = 0;
+    	if(StringUtil.isNullOrEmpty(str)) {
+    		return 0;
+    	}
+    	char[] c = str.toCharArray();
+        for(int i = 0; i < c.length; i ++)
+        {
+            String len = Integer.toBinaryString(c[i]);
+            if(len.length() > 8)
+                count ++;
+        }
+        return count;
+    }
 }

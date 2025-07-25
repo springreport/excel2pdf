@@ -6,6 +6,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfLayer;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 
@@ -22,11 +23,13 @@ import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by cary on 6/15/17.
@@ -75,7 +78,8 @@ public class PdfTableExcel {
     		rows = sheet.getPhysicalNumberOfRows();
     	}
         List<PdfPCell> cells = new ArrayList<PdfPCell>();
-        Set<String> mergeCells = new HashSet<>();
+//        Set<String> mergeCells = new HashSet<>();
+        Map<String, Cell> mergeCells = new HashMap<>();
         JSONObject colhidden = this.excelObject.getColhidden();
         JSONObject rowhidden = this.excelObject.getRowhidden();
         Set<String> rowhiddenkeys = rowhidden.keySet();
@@ -86,6 +90,7 @@ public class PdfTableExcel {
         Map<String, CellStyle> splitMergeCells = new HashMap<>();//分割的合并单元格
         Map<String, Integer> splitMergeCellsRowSpan = new HashMap<>();
         Map<String, Integer> splitMergeCellsColSpan = new HashMap<>();
+        Map<Integer, List<PdfPCell>> pageHeaderCells = new HashMap<>();
         int starty = this.excelObject.getStarty();
         int endy = this.excelObject.getStarty();
         PdfContentByte canvas = this.excelObject.getWriter().getDirectContent();
@@ -93,6 +98,7 @@ public class PdfTableExcel {
         Map<Integer, Integer> pageRows = new HashMap<>();
         int fixedHeader = this.excelObject.getPrintSettings().getFixedHeader().intValue();
         int fixedHeaderStart = 0;
+        float fixedHeaderHeight = 0;//固定行的高度
         if(this.excelObject.getPrintSettings().getFixedHeaderStart() != null) {
         	fixedHeaderStart = this.excelObject.getPrintSettings().getFixedHeaderStart().intValue();
         }
@@ -129,6 +135,7 @@ public class PdfTableExcel {
         float height = 0;
         Map<Integer, Float> rowHeightsMap = new HashMap<>();//记录行高
         for (int t = 0; t < pageDivider.size(); t++) {
+        	int page = 0;
         	 float[] widths = null;
              float mw = 0;
              Map<PdfPCell, XxbtDto> xxbtCells = new HashMap<>();
@@ -138,7 +145,6 @@ public class PdfTableExcel {
 			}else {
 				cells = new ArrayList<PdfPCell>();
 				endy = pageDivider.getIntValue(t)+1;
-				
 				for (int i = this.excelObject.getStartx(); i < rows; i++) {
 		        	if(rowhidden.get(String.valueOf(i)) != null)
 		        	{//隐藏行
@@ -154,14 +160,14 @@ public class PdfTableExcel {
 		                     CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
 		                     if(range != null)
 		                     {
-		                    	 Set<String> merge = new HashSet<>();
+		                    	 Map<String, Cell> merge = new HashMap<>();
 		                    	 int rowspan = range.getLastRow() - range.getFirstRow() + 1;
 		                         int colspan = range.getLastColumn() - range.getFirstColumn() + 1;
-		                    	 this.getMergeCells(i, j, rowspan, colspan, merge);
-		                    	 this.getMergeCells(i, j, rowspan, colspan, mergeCells);
+		                    	 this.getMergeCells(i, j, rowspan, colspan, merge,cell);
+		                    	 this.getMergeCells(i, j, rowspan, colspan, mergeCells,cell);
 		                    	 if(colhidden.containsKey(String.valueOf(j)))
 		                    	 {
-		                     		 for(String key:merge)
+		                     		 for(String key:merge.keySet())
 		                    		 {
 		                    			 if(!key.split("_")[1].equals(String.valueOf(j)) && !rowhidden.containsKey(key.split("_")[0]) && !colhidden.containsKey(key.split("_")[1]))
 		                    			 {
@@ -182,7 +188,7 @@ public class PdfTableExcel {
 		                    			 }
 		                    		 }
 		                    	 }else {
-		                    		 for(String key:merge)
+		                    		 for(String key:merge.keySet())
 		                    		 {
 		                    			 if(!key.split("_")[0].equals(String.valueOf(i)) && !rowhidden.containsKey(key.split("_")[0]))
 		                    			 {
@@ -229,7 +235,7 @@ public class PdfTableExcel {
 		                int colspan = 1;
 		                Cell hiddenCell = null;
 		                PdfPCell pdfpCell = new PdfPCell();
-		                if(mergeCells.contains(i+"_"+j))
+		                if(mergeCells.containsKey(i+"_"+j))
 		                {
 		                	if(hiddenCellsReplace.containsKey(i+"_"+j))
 		                	{
@@ -242,7 +248,34 @@ public class PdfTableExcel {
 		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
 		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
 		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,splitMergeCellsColSpan.get(i+"_"+j)));
-		                			cells.add(pdfpCell);
+		                			Cell firstCell = mergeCells.get(i+"_"+j);
+		                			if(firstCell != null) {
+		                				pdfpCell.setVerticalAlignment(hiddenCell==null?getVAlignByExcel(firstCell.getCellStyle().getVerticalAlignment().getCode()):getVAlignByExcel(hiddenCell.getCellStyle().getVerticalAlignment().getCode()));
+		        		                pdfpCell.setHorizontalAlignment(hiddenCell==null?getHAlignByExcel(firstCell.getCellStyle().getAlignment().getCode()):getHAlignByExcel(hiddenCell.getCellStyle().getAlignment().getCode()));
+		        		                pdfpCell.setPhrase(getPhrase(hiddenCell==null?firstCell:hiddenCell));
+		                				XSSFColor background = hiddenCell==null?(XSSFColor)firstCell.getCellStyle().getFillForegroundColorColor():(XSSFColor)hiddenCell.getCellStyle().getFillForegroundColorColor();
+			    		                if(background != null)
+			    		                {
+			    		                	List<Integer> rgb = this.getColor(background);
+			    		                	pdfpCell.setBackgroundColor(new BaseColor(rgb.get(0),rgb.get(1),rgb.get(2)));
+			    		                }
+		                			}
+		                			if(fixedHeader == 1 && i >= (fixedHeaderStart-1) && i <= (fixedHeaderEnd-1)) {
+		                				List<PdfPCell> headerCells = null;
+		                				if(pageHeaderCells.containsKey(t)) {
+		                					headerCells = pageHeaderCells.get(t);
+		                				}else {
+		                					headerCells = new ArrayList<PdfPCell>();
+		                					pageHeaderCells.put(t, headerCells);
+		                				}
+		                				headerCells.add(pdfpCell);
+		                				if(t == 0) {
+			                				cells.add(pdfpCell);
+			                			}
+		                			}else {
+		                				cells.add(pdfpCell);
+		                			}
+		                			
 		                		}
 		                		continue;
 		                	}
@@ -272,7 +305,7 @@ public class PdfTableExcel {
 		                    }else {
 		                    	colspan = pageDivider.getIntValue(t) - range.getFirstColumn() + 1;
 		                    }
-		                    this.getMergeCells(i, j, rowspan, colspan2, mergeCells);
+		                    this.getMergeCells(i, j, rowspan, colspan2, mergeCells,cell);
 		                    for (int k = 1; k < colspan2; k++) {
 		                    	int y = j + k;
 		                    	Cell cell2 = row.getCell(y);
@@ -354,7 +387,22 @@ public class PdfTableExcel {
 		            		pdfpCell.setPhrase(null);
 		                }
 		            	pdfpCell.setNoWrap(false);
-		                cells.add(pdfpCell);
+		            	if(fixedHeader == 1 && i >= (fixedHeaderStart-1) && i <= (fixedHeaderEnd-1)) {
+            				List<PdfPCell> headerCells = null;
+            				if(pageHeaderCells.containsKey(t)) {
+            					headerCells = pageHeaderCells.get(t);
+            				}else {
+            					headerCells = new ArrayList<PdfPCell>();
+            					pageHeaderCells.put(t, headerCells);
+            				}
+            				headerCells.add(pdfpCell);
+            				if(t == 0) {
+            					cells.add(pdfpCell);
+            				}
+            			}else {
+            				cells.add(pdfpCell);
+            			}
+		            	
 		                if(hiddenCell == null)
 		                {
 		                	j += colspan - 1;
@@ -371,14 +419,19 @@ public class PdfTableExcel {
 		            }
  		            if(t == 0)
 	                {
+ 		            	if(page == 0 && fixedHeader == 1 && i >= (fixedHeaderStart-1) && i <= (fixedHeaderEnd-1)) {
+ 		            		fixedHeaderHeight = fixedHeaderHeight + rowHeight;
+ 		            	}
 	                	height = height + rowHeight;
 	                	if(height > this.excelObject.getTableHeight())
 	                	{
 	                		pageRows.put(i-1, i-1);
-	                		height = rowHeight;
+	                		height = rowHeight+fixedHeaderHeight;
+	                		page = page + 1;
 	                	}else if(height == this.excelObject.getTableHeight()) {
 	                		pageRows.put(i, i);
-	                		height = 0;
+	                		height = fixedHeaderHeight;
+	                		page = page + 1;
 	                	}
 	                }else {
 	                	if(pageRows.containsKey(i))
@@ -389,6 +442,16 @@ public class PdfTableExcel {
 //	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
+	            		    if(pageHeaderCells.containsKey(t)) {
+	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
+	            		    	for (PdfPCell pdfpCell : headerCells) {
+		            		    	pdfpCell.setNoWrap(false);
+		            		        table.addCell(pdfpCell);
+		            		        if(xxbtCells.containsKey(pdfpCell)) {
+		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
+		        			        }
+		            		    }
+	            		    }
 	            		    for (PdfPCell pdfpCell : cells) {
 	            		    	pdfpCell.setNoWrap(false);
 	            		        table.addCell(pdfpCell);
@@ -412,6 +475,16 @@ public class PdfTableExcel {
 //	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
+	            		    if(pageHeaderCells.containsKey(t)) {
+	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
+	            		    	for (PdfPCell pdfpCell : headerCells) {
+		            		    	pdfpCell.setNoWrap(false);
+		            		        table.addCell(pdfpCell);
+		            		        if(xxbtCells.containsKey(pdfpCell)) {
+		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
+		        			        }
+		            		    }
+	            		    }
 	            		    for (PdfPCell pdfpCell : cells) {
 	            		    	pdfpCell.setNoWrap(false);
 	            		        table.addCell(pdfpCell);
@@ -551,13 +624,13 @@ public class PdfTableExcel {
     	
     }
     
-    private void getMergeCells(int r,int c,int rowSpan,int colSpan,Set<String> mergeCells){
+    private void getMergeCells(int r,int c,int rowSpan,int colSpan,Map<String, Cell> mergeCells,Cell cell){
     	for (int i = 0; i < rowSpan; i++) {
 			for (int j = 0; j < colSpan; j++) {
 				if(i == 0 && j==0)
 				{
 				}else {
-					mergeCells.add((r+i)+"_"+(c+j));
+					mergeCells.put((r+i)+"_"+(c+j),cell);
 				}
 			}
 		}
@@ -740,72 +813,33 @@ public class PdfTableExcel {
     		}else {
     			float poiHeight = 0;
     			row = sheet.getRow(rowNum+i);
-//    			if(rowHeightsMap.containsKey(rowNum+i))
-//    			{
-//    				poiHeight = rowHeightsMap.get(rowNum+i);
-//    				int ls = 0;
-//    				if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
-//						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
-//						cell.setLeading(ls, 1f);
-//					}
-//    			}else {
-//    				if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
-////    					FontMetrics fm = sun.font.FontDesignMetrics.getMetrics(f);
-////    					int chartWidth = fm.charWidth('国');
-////    					int width = chartWidth * this.excelObject.getWrapText().get(rowNum+i);
-////    					poiHeight = (float) (fm.getHeight() * width/(this.excelObject.getTableWidth()/cws.length));
-//    					int ls = 0;
-//    					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
-//    						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
-//    						cell.setLeading(ls, 1f);
-//    					}
-//    					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-//    					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
-//    					String wordContent = "国";
-//    					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
-//    					int chartWidth = rec.width;
-//    					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"_"+colNum);
-//    					poiHeight = (float) ((rec.height+ls) * width/(this.excelObject.getTableWidth()/cws.length));
-//    					if(ls > 0) {
-//    						poiHeight = poiHeight + rec.height+ls;
-//    					}
-//    					if(poiHeight > this.excelObject.getTableHeight()) {
-//    						poiHeight = this.excelObject.getTableHeight();
-//    					}else if(poiHeight < row.getHeightInPoints()) {
-//    						poiHeight = sheet.getDefaultRowHeightInPoints();
-//    					}
-//    				}else {
-//                		if(row == null) {
-//                			poiHeight = sheet.getDefaultRowHeightInPoints();
-//                		}else {
-//                			poiHeight = row.getHeightInPoints();
-//                		}
-//    				}
-////    				if(rowSpan > 30) {
-////    					poiHeight = poiHeight / 2;
-////    				}
-//            		if(page == 0) {
-//            			if(rowHeightsMap.containsKey(rowNum+i)) {
-//            				if(poiHeight > rowHeightsMap.get(rowNum+i)) {
-//            					rowHeightsMap.put(rowNum+i, poiHeight);
-//            				}
-//            			}else {
-//            				rowHeightsMap.put(rowNum+i, poiHeight);
-//            			}
-//            		}
-//    			}
-    			if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
-					int ls = 0;
-					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
-						ls = this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+    			if(rowHeightsMap.containsKey(rowNum+i))
+    			{
+    				poiHeight = rowHeightsMap.get(rowNum+i);
+    				int ls = 0;
+    				if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
 						cell.setLeading(ls, 1f);
 					}
+    			}else if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
+					int ls = 0;
+					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
+						cell.setLeading(ls, 1f);
+					}
+					String maxKey = "maxrow_" + (rowNum+i);
+					String cellValue = String.valueOf(this.excelObject.getWrapText().get(maxKey));
 					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
 					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
-					String wordContent = "国";
+					String wordContent = "田";
 					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
+					String enwordContent = "D";
+					java.awt.Rectangle enrec = font.getStringBounds(enwordContent, frc).getBounds();
 					int chartWidth = rec.width;
-					int width = chartWidth * this.excelObject.getWrapText().get((rowNum+i)+"_"+colNum);
+					int enchartWidth = enrec.width;
+					int cnlength = StringUtil.isNullOrEmpty(cellValue)?0:StringUtil.countChineseCharaceters(cellValue);
+					int enlength = StringUtil.isNullOrEmpty(cellValue)?0:(cellValue.length() - cnlength);
+					int width = chartWidth * cnlength + enchartWidth* enlength;
 					float rows = width/(this.excelObject.getTableWidth()/cws.length*colSpan);
 					poiHeight = (float) ((rec.height+ls) * rows);
 //					if(ls > 0) {
@@ -1029,7 +1063,7 @@ public class PdfTableExcel {
     	}else {
     		rows = sheet.getPhysicalNumberOfRows();
     	}
-    	Set<String> mergeCells = new HashSet<>();
+    	Map<String, Cell> mergeCells = new HashMap<>();
     	JSONObject colhidden = this.excelObject.getColhidden();
         JSONObject rowhidden = this.excelObject.getRowhidden();
         Set<String> colhiddenkeys = colhidden.keySet();
@@ -1062,14 +1096,14 @@ public class PdfTableExcel {
                      CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
                      if(range != null)
                      {
-                    	 Set<String> merge = new HashSet<>();
+                    	 Map<String, Cell> merge = new HashMap<>();
                     	 int rowspan = range.getLastRow() - range.getFirstRow() + 1;
                          int colspan = range.getLastColumn() - range.getFirstColumn() + 1;
-                    	 this.getMergeCells(i, j, rowspan, colspan, merge);
-                    	 this.getMergeCells(i, j, rowspan, colspan, mergeCells);
+                    	 this.getMergeCells(i, j, rowspan, colspan, merge,cell);
+                    	 this.getMergeCells(i, j, rowspan, colspan, mergeCells,cell);
                     	 if(colhidden.containsKey(String.valueOf(j)))
                     	 {
-                    		 for(String key:merge)
+                    		 for(String key:merge.keySet())
                     		 {
                     			 if(!key.split("_")[1].equals(String.valueOf(j)) && !rowhidden.containsKey(key.split("_")[0]) && !colhidden.containsKey(key.split("_")[1]))
                     			 {
@@ -1099,7 +1133,7 @@ public class PdfTableExcel {
                     			 }
                     		 }
                     	 }else {
-                    		 for(String key:merge)
+                    		 for(String key:merge.keySet())
                     		 {
                     			 if(!key.split("_")[0].equals(String.valueOf(i)) && !rowhidden.containsKey(key.split("_")[0]))
                     			 {
@@ -1148,7 +1182,7 @@ public class PdfTableExcel {
                 int rowspan = 1;
                 int colspan = 1;
                 XSSFCell hiddenCell = null;
-                if(mergeCells.contains(i+"_"+j))
+                if(mergeCells.containsKey(i+"_"+j))
                 {
                 	if(hiddenCellsReplace.containsKey(i+"_"+j))
                 	{
@@ -1200,7 +1234,7 @@ public class PdfTableExcel {
                 if (range != null && hiddenCell == null) {
                     rowspan = range.getLastRow() - range.getFirstRow() + 1;
                     colspan = range.getLastColumn() - range.getFirstColumn() + 1;
-                    this.getMergeCells(i, j, rowspan, colspan, mergeCells);
+                    this.getMergeCells(i, j, rowspan, colspan, mergeCells,cell);
                 }
                 tableCell.setColSpan(colspan);
                 tableCell.setRowSpan(rowspan);
@@ -1258,24 +1292,35 @@ public class PdfTableExcel {
     		totalWidth = totalWidth + widths[i];
 		}
     	float ratio = this.excelObject.getTableWidth()/totalWidth;
+    	List<Map<String, Object>> imageList = new ArrayList<>();
     	for(String mapKey : imageInfos.keySet()){
-    		Map<String, Object> value = imageInfos.get(mapKey);
+    		imageList.add(imageInfos.get(mapKey));
+    	}
+    	List<Map<String, Object>> sortedList = imageList.stream()
+    			.sorted(Comparator.comparing(e -> (int) e.get("zIndex")))
+    			.collect(Collectors.toList());
+//    	for(String mapKey : imageInfos.keySet()){
+    	for (int t = 0; t < sortedList.size(); t++) {
+//    		Map<String, Object> value = imageInfos.get(mapKey);
+    		Map<String, Object> value = sortedList.get(t);
     		float imageHeight = 0;
     		float imageWidth = 0;
     		float left = 0;
     		float top = 0;
     		int col1 = (int)value.get("col1");
     		int row1 = (int)value.get("row1");
-    		int col2 = (int)value.get("col2");
+     		int col2 = (int)value.get("col2");
     		int row2 = (int)value.get("row2");
-    		float dy1Percent = (float)value.get("dy1Percent");
-    		float dy2Percent = (float)value.get("dy2Percent");
-    		float dx1Percent = (float)value.get("dx1Percent");
-    		float dx2Percent = (float)value.get("dx2Percent");
+    		float dy1Percent = Float.valueOf(String.valueOf(value.get("dy1Percent")));
+    		float dy2Percent = Float.valueOf(String.valueOf(value.get("dy2Percent")));
+    		float dx1Percent = Float.valueOf(String.valueOf(value.get("dx1Percent")));
+    		float dx2Percent = Float.valueOf(String.valueOf(value.get("dx2Percent")));
     		float dx1 = 0;//第一个单元格距离单元格左边框的横向距离
     		float dx2 = 0;//最后一个单元格距离单元格左边框的横向距离
     		float dy1 = 0;//第一个单元格距离单元格上边框的纵向距离
     		float dy2 = 0;//最后一个单元格距离单元格上边框的纵向距离
+    		float width = (float)value.get("width");
+    		float height = (float)value.get("height");
     		if(col2<starty)
     		{
     			continue;
@@ -1297,7 +1342,11 @@ public class PdfTableExcel {
     				imageWidth = imageWidth + widths[i-starty]*ratio;
     			}
 			}
-    		
+    		float pictureWidthRatio = imageWidth/width;
+//    		imageHeight = height * pictureWidthRatio;
+    		if(imageHeight > this.excelObject.getTableHeight()) {
+    			imageHeight = this.excelObject.getTableHeight();
+    		}
     		for (int i = row1; i <= row2; i++) {
     			if(i == row1) {
     				dy1 = rowHeightsMap.get(i) * dy1Percent;
@@ -1309,11 +1358,23 @@ public class PdfTableExcel {
     				imageHeight = imageHeight + rowHeightsMap.get(i);
     			}
 			}
+    		float pictureHeightRatio = imageHeight/height;
+    		if(pictureHeightRatio > pictureWidthRatio) {
+    			imageWidth = width * pictureHeightRatio;
+    		}else {
+    			imageHeight = height * pictureWidthRatio;
+    		}
+    		if(imageWidth > this.excelObject.getTableWidth()) {
+    			imageWidth = this.excelObject.getTableWidth();
+    		}
+    		if(imageHeight > this.excelObject.getTableHeight()) {
+    			imageHeight = this.excelObject.getTableHeight();
+    		}
     		for (int i = 0; i <= (col1-starty); i++) {
 				if(i == col1-starty) {
 					left = left + dx1;
 				}else {
-					left = left + widths[i];
+					left = left + widths[i]*ratio;
 				}
 			}
     		for (int i = this.excelObject.getStartx(); i <= row1; i++) {
@@ -1325,8 +1386,10 @@ public class PdfTableExcel {
     		}
     		background.setAbsolutePosition(left+this.excelObject.getDocument().leftMargin(), this.excelObject.getDocument().getPageSize().getTop()-this.excelObject.getDocument().topMargin()-imageHeight-top);
     		background.scaleAbsolute(imageWidth, imageHeight);
+    		PdfLayer layer = new PdfLayer(t+"", this.excelObject.getWriter());
+    		canvas.beginLayer(layer);
     		canvas.addImage(background);
+    		canvas.endLayer();
     	}
     }
-
 }

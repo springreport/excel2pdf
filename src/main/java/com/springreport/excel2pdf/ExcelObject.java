@@ -116,10 +116,10 @@ public class ExcelObject {
      * @author caiyang
      * @date 2024-10-13 03:50:46 
      */  
-    private Map<String, Integer> wrapText;
+    private Map<String, Object> wrapText;
 	
     
-    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Integer> wrapText){
+    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Object> wrapText){
         this.anchorName = anchorName;
         this.inputStream = inputStream;
         this.excel = new Excel(this.inputStream,this.sheetIndex);
@@ -302,11 +302,11 @@ public class ExcelObject {
 		this.backImages = backImages;
 	}
 
-	public Map<String, Integer> getWrapText() {
+	public Map<String, Object> getWrapText() {
 		return wrapText;
 	}
 
-	public void setWrapText(Map<String, Integer> wrapText) {
+	public void setWrapText(Map<String, Object> wrapText) {
 		this.wrapText = wrapText;
 	}
 
