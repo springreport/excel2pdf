@@ -805,6 +805,9 @@ public class PdfTableExcel {
     	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
+    	if(rowNum == 17 ) {
+    		System.err.println();
+    	}
     	for (int i = 0; i < rowSpan; i++) {
     		if(rowhidden.get(String.valueOf(rowNum+i)) != null)
     		{
@@ -840,6 +843,9 @@ public class PdfTableExcel {
 					int cnlength = StringUtil.isNullOrEmpty(cellValue)?0:StringUtil.countChineseCharaceters(cellValue);
 					int enlength = StringUtil.isNullOrEmpty(cellValue)?0:(cellValue.length() - cnlength);
 					int width = chartWidth * cnlength + enchartWidth* enlength;
+					if(this.excelObject.getWrapText().containsKey(maxKey+"_colspan")) {
+						colSpan = (int) this.excelObject.getWrapText().get(maxKey+"_colspan");
+					}
 					float rows = width/(this.excelObject.getTableWidth()/cws.length*colSpan);
 					poiHeight = (float) ((rec.height+ls) * rows);
 //					if(ls > 0) {
