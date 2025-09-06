@@ -526,6 +526,8 @@ public class PdfTableExcel {
 				}
 			    table.setKeepTogether(true);
 			    table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
+//			    table.setSplitLate(false);
+//			    table.setSplitRows(true);
 			    result.add(table);	
 			}
 			starty = endy;
@@ -752,6 +754,23 @@ public class PdfTableExcel {
     	POIImage poiImage = new POIImage().getCellImage(cell);
 
     	byte[] bytes = poiImage.getBytes();
+    	if(bytes == null) {
+    		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex());
+    		if(range != null) {
+    			int rowspan = range.getLastRow() - range.getFirstRow() + 1;
+    			int colspan = range.getLastColumn() - range.getFirstColumn() + 1;
+    			for (int i = cell.getRowIndex(); i < (cell.getRowIndex()+rowspan); i++) {
+					for (int j = cell.getColumnIndex(); j < (cell.getColumnIndex()+colspan); j++) {
+							Cell mergeCell = this.excel.sheet.getRow(i).getCell(j);
+							poiImage = new POIImage().getCellImage(mergeCell);
+					    	bytes = poiImage.getBytes();
+					    	if(bytes != null) {
+					    		break;
+					    	}
+					}
+				}
+    		}
+    	}
         if (bytes != null) {
 //           double cw = cellWidth;
 //           double ch = pdfpCell.getFixedHeight();
