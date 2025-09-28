@@ -824,7 +824,7 @@ public class PdfTableExcel {
     	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
-    	if(rowNum == 17 ) {
+    	if(rowNum == 3) {
     		System.err.println();
     	}
     	for (int i = 0; i < rowSpan; i++) {
@@ -853,33 +853,35 @@ public class PdfTableExcel {
 					String cellValue = String.valueOf(this.excelObject.getWrapText().get(maxKey));
 					FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
 					java.awt.Font font = new java.awt.Font("微软雅黑", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
+					int width = (int) font.getStringBounds(cellValue, frc).getWidth();
 					String wordContent = "田";
 					java.awt.Rectangle rec = font.getStringBounds(wordContent, frc).getBounds();
-					String enwordContent = "D";
-					java.awt.Rectangle enrec = font.getStringBounds(enwordContent, frc).getBounds();
-					int chartWidth = rec.width;
-					int enchartWidth = enrec.width;
-					int cnlength = StringUtil.isNullOrEmpty(cellValue)?0:StringUtil.countChineseCharaceters(cellValue);
-					int enlength = StringUtil.isNullOrEmpty(cellValue)?0:(cellValue.length() - cnlength);
-					int width = chartWidth * cnlength + enchartWidth* enlength;
+//					String enwordContent = "D";
+//					java.awt.Rectangle enrec = font.getStringBounds(enwordContent, frc).getBounds();
+//					int chartWidth = rec.width;
+//					int enchartWidth = enrec.width;
+//					int cnlength = StringUtil.isNullOrEmpty(cellValue)?0:StringUtil.countChineseCharaceters(cellValue);
+//					int digitLength = StringUtil.isNullOrEmpty(cellValue)?0:StringUtil.countDigits(cellValue);
+//					int enlength = StringUtil.isNullOrEmpty(cellValue)?0:(cellValue.length() - cnlength - digitLength);
+//					int width = chartWidth * cnlength + enchartWidth* enlength;
 					if(this.excelObject.getWrapText().containsKey(maxKey+"_colspan")) {
 						colSpan = (int) this.excelObject.getWrapText().get(maxKey+"_colspan");
 					}
 					float rows = width/(this.excelObject.getTableWidth()/cws.length*colSpan);
-					poiHeight = (float) ((rec.height+ls) * rows);
+					poiHeight = (float) ((rec.height+ls) * rows)*this.excelObject.getPrintSettings().getRowheightMulti();
 //					if(ls > 0) {
 //						poiHeight = poiHeight + rec.height+ls;
 //					}
 					if(poiHeight > this.excelObject.getTableHeight()) {
-						poiHeight = this.excelObject.getTableHeight();
+						poiHeight = this.excelObject.getTableHeight()*this.excelObject.getPrintSettings().getRowheightMulti();
 					}else if(poiHeight < row.getHeightInPoints()) {
-						poiHeight = row.getHeightInPoints();
+						poiHeight = row.getHeightInPoints()*this.excelObject.getPrintSettings().getRowheightMulti();
 					}
 				}else {
             		if(row == null) {
-            			poiHeight = sheet.getDefaultRowHeightInPoints();
+            			poiHeight = sheet.getDefaultRowHeightInPoints()*this.excelObject.getPrintSettings().getRowheightMulti();;
             		}else {
-            			poiHeight = row.getHeightInPoints();
+            			poiHeight = row.getHeightInPoints()*this.excelObject.getPrintSettings().getRowheightMulti();;
             		}
 				}
         		if(page == 0) {
@@ -894,6 +896,9 @@ public class PdfTableExcel {
         		pixel = pixel + poiHeight;
     		}
 		}
+    	if(pixel > 15) {
+    		System.err.println();
+    	}
         return pixel;
     }
 
@@ -950,7 +955,7 @@ public class PdfTableExcel {
     }
 
     protected Font getFontByExcel(XSSFCellStyle style) {
-    	short fontSize = 8;
+    	float fontSize = 8f;
     	String fontName = "";
     	try {
     		fontSize = style.getFont().getFontHeightInPoints();
@@ -958,6 +963,7 @@ public class PdfTableExcel {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+    	fontSize = fontSize*this.excelObject.getPrintSettings().getFontMulti(); 
     	XSSFColor color = (XSSFColor)style.getFont().getXSSFColor();
     	BaseColor baseColor = null;
         if(color != null)

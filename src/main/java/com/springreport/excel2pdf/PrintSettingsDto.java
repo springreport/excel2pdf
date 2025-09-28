@@ -118,6 +118,20 @@ public class PrintSettingsDto {
 
     /** bottom_margin - 下边距 */
     private Integer bottomMargin = 36;
+    
+    /**  
+     * @Fields fontMulti : 字体缩放倍数
+     * @author caiyang
+     * @date 2025-09-23 10:52:22 
+     */  
+    private Float fontMulti = 1.00f;
+    
+    /**  
+     * @Fields rowheightMulti : 行高缩放倍数
+     * @author caiyang
+     * @date 2025-09-23 10:52:41 
+     */  
+    private Float rowheightMulti = 1.00f;
 
 	public Integer getPageType() {
 		return pageType;
@@ -333,5 +347,21 @@ public class PrintSettingsDto {
 
 	public void setBottomMargin(Integer bottomMargin) {
 		this.bottomMargin = bottomMargin;
+	}
+
+	public Float getFontMulti() {
+		return fontMulti;
+	}
+
+	public void setFontMulti(Float fontMulti) {
+		this.fontMulti = fontMulti;
+	}
+
+	public Float getRowheightMulti() {
+		return rowheightMulti;
+	}
+
+	public void setRowheightMulti(Float rowheightMulti) {
+		this.rowheightMulti = rowheightMulti;
 	}
 }

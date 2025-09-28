@@ -57,4 +57,23 @@ public class StringUtil {
         }
         return count;
     }
+    
+    /**  
+     * @MethodName: countDigits
+     * @Description: 统计字符串中数字的数量
+     * @author caiyang
+     * @param str
+     * @return int
+     * @date 2025-09-23 09:19:57 
+     */ 
+    public static int countDigits(String str) {
+    	String digitsOnly = str.replaceAll("\\D", "");
+        int count = digitsOnly.length();
+        return count;
+    }
+    
+    public static void main(String[] args) {
+		String str = "测试123 2025-09-06 abc";
+		System.err.println(StringUtil.countDigits(str));
+	}
 }
