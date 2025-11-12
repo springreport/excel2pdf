@@ -824,9 +824,6 @@ public class PdfTableExcel {
     	java.awt.Font f = new java.awt.Font("STSongStd-Light", style.getFont().getBold()?Font.BOLD:Font.NORMAL, style.getFont().getFontHeightInPoints());
     	Row row = null;
     	float pixel = 0;
-    	if(rowNum == 3) {
-    		System.err.println();
-    	}
     	for (int i = 0; i < rowSpan; i++) {
     		if(rowhidden.get(String.valueOf(rowNum+i)) != null)
     		{
@@ -839,7 +836,7 @@ public class PdfTableExcel {
     			{
     				poiHeight = rowHeightsMap.get(rowNum+i);
     				int ls = 0;
-    				if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
+    				if(this.excelObject.getWrapText() != null && this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
 						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
 						cell.setLeading(ls, 1f);
 					}

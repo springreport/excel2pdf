@@ -137,7 +137,7 @@ public class ExcelObject {
         this.wrapText = wrapText;
     }
     
-    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,Integer sheetIndex,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages){
+    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,Integer sheetIndex,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Object> wrapText){
         this.anchorName = anchorName;
         this.inputStream = inputStream;
         this.sheetIndex = sheetIndex;
@@ -153,6 +153,7 @@ public class ExcelObject {
         this.printSettings = printSettings;
         this.imageInfos = imageInfos;
         this.backImages = backImages;
+        this.wrapText = wrapText;
     }
     public String getAnchorName() {
         return anchorName;
