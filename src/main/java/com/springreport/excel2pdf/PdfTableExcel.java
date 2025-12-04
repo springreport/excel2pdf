@@ -832,6 +832,7 @@ public class PdfTableExcel {
     		}else {
     			float poiHeight = 0;
     			row = sheet.getRow(rowNum+i);
+    			String key = "row_"+ (rowNum+i);
     			if(rowHeightsMap.containsKey(rowNum+i))
     			{
     				poiHeight = rowHeightsMap.get(rowNum+i);
@@ -840,11 +841,14 @@ public class PdfTableExcel {
 						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
 						cell.setLeading(ls, 1f);
 					}
-    			}else if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey((rowNum+i)+"_"+colNum)) {
+    			}else if(this.excelObject.getWrapText()!=null && this.excelObject.getWrapText().containsKey(key)) {
 					int ls = 0;
-					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+colNum+"_ls")) {
-						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+colNum+"_ls");
-						cell.setLeading(ls, 1f);
+					Object column = this.excelObject.getWrapText().get(key);
+					if(this.excelObject.getWrapText().containsKey(rowNum+"_"+column+"_ls")) {
+						ls = (int) this.excelObject.getWrapText().get(rowNum+"_"+column+"_ls");
+						if((colNum+"").equals(column+"")) {
+							cell.setLeading(ls, 1f);
+						}
 					}
 					String maxKey = "maxrow_" + (rowNum+i);
 					String cellValue = String.valueOf(this.excelObject.getWrapText().get(maxKey));
