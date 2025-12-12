@@ -10,6 +10,9 @@ import com.itextpdf.text.pdf.PdfLayer;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 
+import org.apache.poi.ss.formula.ConditionalFormattingEvaluator;
+import org.apache.poi.ss.formula.EvaluationConditionalFormatRule;
+import org.apache.poi.ss.formula.WorkbookEvaluatorProvider;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -219,6 +222,11 @@ public class PdfTableExcel {
 		            }
 		            float[] cws = new float[endy-starty];
 		            float rowHeight = 0;
+		            WorkbookEvaluatorProvider workbookEvaluatorProvider =
+		                    (WorkbookEvaluatorProvider) excel.getWorkbook().getCreationHelper().createFormulaEvaluator();
+		            // 1. 创建ConditionalFormattingEvaluator
+		            ConditionalFormattingEvaluator conditionalFormattingEvaluator =
+		                    new ConditionalFormattingEvaluator(excel.getWorkbook(), workbookEvaluatorProvider);
 		            for (int j = starty; j < endy; j++) {
 		                Cell cell = row.getCell(j);
 		                if (cell == null) {
@@ -252,7 +260,7 @@ public class PdfTableExcel {
 		                			if(firstCell != null) {
 		                				pdfpCell.setVerticalAlignment(hiddenCell==null?getVAlignByExcel(firstCell.getCellStyle().getVerticalAlignment().getCode()):getVAlignByExcel(hiddenCell.getCellStyle().getVerticalAlignment().getCode()));
 		        		                pdfpCell.setHorizontalAlignment(hiddenCell==null?getHAlignByExcel(firstCell.getCellStyle().getAlignment().getCode()):getHAlignByExcel(hiddenCell.getCellStyle().getAlignment().getCode()));
-		        		                pdfpCell.setPhrase(getPhrase(hiddenCell==null?firstCell:hiddenCell));
+		        		                pdfpCell.setPhrase(getPhrase(hiddenCell==null?firstCell:hiddenCell,conditionalFormattingEvaluator));
 		                				XSSFColor background = hiddenCell==null?(XSSFColor)firstCell.getCellStyle().getFillForegroundColorColor():(XSSFColor)hiddenCell.getCellStyle().getFillForegroundColorColor();
 			    		                if(background != null)
 			    		                {
@@ -275,7 +283,6 @@ public class PdfTableExcel {
 		                			}else {
 		                				cells.add(pdfpCell);
 		                			}
-		                			
 		                		}
 		                		continue;
 		                	}
@@ -283,8 +290,9 @@ public class PdfTableExcel {
 		                pdfpCell.setVerticalAlignment(hiddenCell==null?getVAlignByExcel(cell.getCellStyle().getVerticalAlignment().getCode()):getVAlignByExcel(hiddenCell.getCellStyle().getVerticalAlignment().getCode()));
 		                pdfpCell.setHorizontalAlignment(hiddenCell==null?getHAlignByExcel(cell.getCellStyle().getAlignment().getCode()):getHAlignByExcel(hiddenCell.getCellStyle().getAlignment().getCode()));
 
-		                pdfpCell.setPhrase(getPhrase(hiddenCell==null?cell:hiddenCell));
-		                XSSFColor background = hiddenCell==null?(XSSFColor)cell.getCellStyle().getFillForegroundColorColor():(XSSFColor)hiddenCell.getCellStyle().getFillForegroundColorColor();
+		                pdfpCell.setPhrase(getPhrase(hiddenCell==null?cell:hiddenCell,conditionalFormattingEvaluator));
+//		                XSSFColor background = hiddenCell==null?(XSSFColor)cell.getCellStyle().getFillForegroundColorColor():(XSSFColor)hiddenCell.getCellStyle().getFillForegroundColorColor();
+		                XSSFColor background = this.getBackground(hiddenCell, cell, conditionalFormattingEvaluator);
 		                if(background != null)
 		                {
 		                	List<Integer> rgb = this.getColor(background);
@@ -639,12 +647,12 @@ public class PdfTableExcel {
     }
 
 
-    protected Phrase getPhrase(Cell cell) {
+    protected Phrase getPhrase(Cell cell,ConditionalFormattingEvaluator conditionalFormattingEvaluator) {
     	if(isRichTextString(cell))
     	{
     		return getRichTextPhrase(cell);
     	}else {
-    		return new Phrase(String.valueOf(getCellValue(cell)), getFontByExcel((XSSFCellStyle) cell.getCellStyle()));
+    		return new Phrase(String.valueOf(getCellValue(cell)), getFontByExcel((XSSFCellStyle) cell.getCellStyle(),cell,conditionalFormattingEvaluator));
     	}
 //        if (this.setting || this.excelObject.getAnchorName() == null) {
 //        	if(isRichTextString(cell))
@@ -955,7 +963,7 @@ public class PdfTableExcel {
         return result;
     }
 
-    protected Font getFontByExcel(XSSFCellStyle style) {
+    protected Font getFontByExcel(XSSFCellStyle style,Cell cell,ConditionalFormattingEvaluator conditionalFormattingEvaluator) {
     	float fontSize = 8f;
     	String fontName = "";
     	try {
@@ -965,7 +973,7 @@ public class PdfTableExcel {
 			e.printStackTrace();
 		}
     	fontSize = fontSize*this.excelObject.getPrintSettings().getFontMulti(); 
-    	XSSFColor color = (XSSFColor)style.getFont().getXSSFColor();
+    	XSSFColor color = getFontColor(cell, conditionalFormattingEvaluator);
     	BaseColor baseColor = null;
         if(color != null)
         {
@@ -1423,5 +1431,70 @@ public class PdfTableExcel {
     		canvas.addImage(background);
     		canvas.endLayer();
     	}
+    }
+    
+    /**  
+     * @MethodName: getBackground
+     * @Description: 获取单元格背景色，如果有条件格式则优先使用条件格式的颜色
+     * @author caiyang
+     * @param hiddenCell
+     * @param cell
+     * @param conditionalFormattingEvaluator
+     * @return XSSFColor
+     * @date 2025-12-12 07:52:44 
+     */  
+    private XSSFColor getBackground(Cell hiddenCell,Cell cell,ConditionalFormattingEvaluator conditionalFormattingEvaluator) {
+    	XSSFColor background = null;
+    	Cell formatCell = null;
+    	if(hiddenCell==null) {
+    		formatCell = cell;
+    	}else {
+    		formatCell = hiddenCell;
+    	}
+    	List<EvaluationConditionalFormatRule> matchingCFRules = conditionalFormattingEvaluator.getConditionalFormattingForCell(formatCell);
+    	if(matchingCFRules != null && matchingCFRules.size() >0) {
+
+    		for (EvaluationConditionalFormatRule evalCFRule : matchingCFRules) {
+    			ConditionalFormattingRule cFRule = evalCFRule.getRule();
+    			if(cFRule.getPatternFormatting() != null) {
+    				if(cFRule.getPatternFormatting().getFillBackgroundColorColor() != null) {
+    					background = (XSSFColor) cFRule.getPatternFormatting().getFillBackgroundColorColor();
+    					break;
+    				}
+    			}
+    		}
+    	}else {
+    		background = (XSSFColor) formatCell.getCellStyle().getFillForegroundColorColor();
+    	}
+    	return background;
+    }
+    
+    /**  
+     * @MethodName: getFontColor
+     * @Description: 获取字体颜，如果有条件格式则优先使用条件格式的颜色
+     * @author caiyang
+     * @param cell
+     * @param conditionalFormattingEvaluator
+     * @return XSSFColor
+     * @date 2025-12-12 07:53:16 
+     */  
+    private XSSFColor getFontColor(Cell cell,ConditionalFormattingEvaluator conditionalFormattingEvaluator) {
+    	XSSFColor font = null;
+    	List<EvaluationConditionalFormatRule> matchingCFRules = conditionalFormattingEvaluator.getConditionalFormattingForCell(cell);
+    	if(matchingCFRules != null && matchingCFRules.size() >0) {
+    		for (EvaluationConditionalFormatRule evalCFRule : matchingCFRules) {
+    			ConditionalFormattingRule cFRule = evalCFRule.getRule();
+    			if(cFRule.getFontFormatting() != null) {
+    				if(cFRule.getFontFormatting().getFontColor() != null) {
+    					font = (XSSFColor) cFRule.getFontFormatting().getFontColor();
+    					break;
+    				}
+    			}
+    		}
+    	}else {
+    		XSSFCellStyle style = (XSSFCellStyle) cell.getCellStyle();
+    		font = (XSSFColor) style.getFont().getXSSFColor();
+    	}
+    	return font;
     }
 }
