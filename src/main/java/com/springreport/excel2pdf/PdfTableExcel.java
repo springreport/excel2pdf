@@ -877,7 +877,7 @@ public class PdfTableExcel {
 						colSpan = (int) this.excelObject.getWrapText().get(maxKey+"_colspan");
 					}
 					float rows = width/(this.excelObject.getTableWidth()/cws.length*colSpan);
-					poiHeight = (float) ((rec.height+ls) * rows)*this.excelObject.getPrintSettings().getRowheightMulti();
+					poiHeight = (float) ((rec.height+ls) * Math.ceil(rows))*this.excelObject.getPrintSettings().getRowheightMulti();
 //					if(ls > 0) {
 //						poiHeight = poiHeight + rec.height+ls;
 //					}
