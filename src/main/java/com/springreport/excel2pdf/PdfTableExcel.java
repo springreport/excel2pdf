@@ -99,6 +99,8 @@ public class PdfTableExcel {
         Map<String, PdfPCell> coorPdfPcellMap = null;//单元格坐标对应的pdfpcell
         Map<String, String> coorMergeMap = null;//单元格坐标对应的合并信息，例如1_1:3_2代表1行1列单元格行合并是3，列合并是2
         Map<String, PdfPCell> newCellOriginal = new HashMap<String, PdfPCell>();//新单元格来源于哪个单元格
+        Map<String, CellRangeAddress> cellRangeMap = new HashMap<String, CellRangeAddress>();//sheet页中所有的合并单元格
+        this.getSheetMergeRegions(cellRangeMap);
         int starty = this.excelObject.getStarty();
         int endy = this.excelObject.getStarty();
         PdfContentByte canvas = this.excelObject.getWriter().getDirectContent();
@@ -168,7 +170,7 @@ public class PdfTableExcel {
 		                      if (cell == null) {
 		                         cell = row.createCell(j);
 		                     }
-		                     CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
+		                     CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex(),cellRangeMap);
 		                     if(range != null)
 		                     {
 		                    	 Map<String, Cell> merge = new HashMap<>();
@@ -335,7 +337,7 @@ public class PdfTableExcel {
 		                addBorderByExcel(pdfpCell, cell.getCellStyle());
 		                // 执行此方法在poi导出为 Workbook 是 SXSSFWorkbook的类型时，此方法会导致转换cell 为""
 		                //cell.setCellType(CellType.STRING);
-		                CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
+		                CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex(),cellRangeMap);
 		                
 		                if (range != null && hiddenCell == null) {
 		                    rowspan = range.getLastRow() - range.getFirstRow() + 1;
@@ -411,7 +413,7 @@ public class PdfTableExcel {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
 		                pdfpCell.setFixedHeight(this.getPixelHeight(1,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
-		                addImageByPOICell(pdfpCell, cell, cw);
+		                addImageByPOICell(pdfpCell, cell, cw,cellRangeMap);
 		                if(j == starty)
 		                {
 		                	rowHeight = pdfpCell.getFixedHeight();
@@ -813,7 +815,7 @@ public class PdfTableExcel {
     }
 
 
-    protected void addImageByPOICell(PdfPCell pdfpCell, Cell cell, float cellWidth) throws BadElementException, MalformedURLException, IOException {
+    protected void addImageByPOICell(PdfPCell pdfpCell, Cell cell, float cellWidth,Map<String, CellRangeAddress> cellRangeMap) throws BadElementException, MalformedURLException, IOException {
         String key = cell.getRowIndex() + "_" + cell.getColumnIndex();
         if(this.excelObject.getBackImages() != null & this.excelObject.getBackImages().containsKey(key)) {
         	return;
@@ -822,7 +824,7 @@ public class PdfTableExcel {
 
     	byte[] bytes = poiImage.getBytes();
     	if(bytes == null) {
-    		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex());
+    		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex(),cellRangeMap);
     		if(range != null) {
     			int rowspan = range.getLastRow() - range.getFirstRow() + 1;
     			int colspan = range.getLastColumn() - range.getFirstColumn() + 1;
@@ -858,7 +860,7 @@ public class PdfTableExcel {
         	if(ff != null && ff.contains("barCode128")) {
         		int rowspan = 1;
         		int colspan = 1;
-        		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex());
+        		CellRangeAddress range = getColspanRowspanByExcel(cell.getRowIndex(), cell.getColumnIndex(),cellRangeMap);
         		if(range != null) {
         			rowspan = range.getLastRow() - range.getFirstRow() + 1;
         			colspan = range.getLastColumn() - range.getFirstColumn() + 1;
@@ -987,15 +989,19 @@ public class PdfTableExcel {
 //        return poiCWidth;
     }
 
-    protected CellRangeAddress getColspanRowspanByExcel(int rowIndex, int colIndex) {
+    protected CellRangeAddress getColspanRowspanByExcel(int rowIndex, int colIndex,Map<String, CellRangeAddress> cellRangeMap) {
         CellRangeAddress result = null;
-        Sheet sheet = excel.getSheet();
-        int num = sheet.getNumMergedRegions();
-        for (int i = 0; i < num; i++) {
-            CellRangeAddress range = sheet.getMergedRegion(i);
-            if (range.getFirstColumn() == colIndex && range.getFirstRow() == rowIndex) {
-                result = range;
-            }
+//        Sheet sheet = excel.getSheet();
+//        int num = sheet.getNumMergedRegions();
+//        for (int i = 0; i < num; i++) {
+//            CellRangeAddress range = sheet.getMergedRegion(i);
+//            if (range.getFirstColumn() == colIndex && range.getFirstRow() == rowIndex) {
+//                result = range;
+//            }
+//        }
+        String key = rowIndex + "_" + colIndex;
+        if(cellRangeMap.containsKey(key)) {
+        	result = cellRangeMap.get(key);
         }
         return result;
     }
@@ -1168,6 +1174,8 @@ public class PdfTableExcel {
         Map<String, Cell> hiddenCells = new HashMap<>();
         Map<String, Integer> rowSpan = new HashMap<>();
         Map<String, Integer> colSpan = new HashMap<>();
+        Map<String, CellRangeAddress> cellRangeMap = new HashMap<String, CellRangeAddress>();//sheet页中所有的合并单元格
+        this.getSheetMergeRegions(cellRangeMap);
         Set<Integer> emptyRows = new HashSet<>();
     	for (int i = this.excelObject.getStartx(); i < rows; i++) {
      		List<TableCell> rowCells = new ArrayList<>();
@@ -1189,7 +1197,7 @@ public class PdfTableExcel {
                      if (cell == null) {
                          cell = row.createCell(j);
                      }
-                     CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
+                     CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex(),cellRangeMap);
                      if(range != null)
                      {
                     	 Map<String, Cell> merge = new HashMap<>();
@@ -1325,7 +1333,7 @@ public class PdfTableExcel {
                 	tableCell.setUnderLine(hiddenCell==null?cell.getCellStyle().getFont().getUnderline():hiddenCell.getCellStyle().getFont().getUnderline());
 				} catch (Exception e) {
 				}
-                CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex());
+                CellRangeAddress range = getColspanRowspanByExcel(row.getRowNum(), cell.getColumnIndex(),cellRangeMap);
                 
                 if (range != null && hiddenCell == null) {
                     rowspan = range.getLastRow() - range.getFirstRow() + 1;
@@ -1617,5 +1625,20 @@ public class PdfTableExcel {
     		}
     	}
     	return addFlag;
+    }
+    
+    private void getSheetMergeRegions(Map<String, CellRangeAddress> cellRangeMap) {
+    	Sheet sheet = this.excel.getSheet();
+    	List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+    	if(mergedRegions!=null && mergedRegions.size() > 0) {
+    		CellRangeAddress range = null;
+    		for (int i = 0; i < mergedRegions.size(); i++) {
+    			range = mergedRegions.get(i);
+    			int r = range.getFirstRow();
+    			int c = range.getFirstColumn();
+    			cellRangeMap.put(r+"_"+c, range);
+			}
+    	}
+    	
     }
 }
