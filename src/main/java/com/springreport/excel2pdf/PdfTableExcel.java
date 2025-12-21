@@ -220,6 +220,11 @@ public class PdfTableExcel {
 		                    			 }
 		                    		 }
 		                    	 }
+		                     }else {
+		                    	PdfPCell pdfpCell = new PdfPCell();
+		                    	cells.add(pdfpCell);
+	                			pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+	                			coorPdfPcellMap.put(i+"_"+j, pdfpCell);
 		                     }
 		                }
 		        		continue;
@@ -388,13 +393,13 @@ public class PdfTableExcel {
 							}
 		                }
 		                int rowSpan2 = rowspan;
-		                if(rowspan > 1) {
-		                	for (int k = 1; k < rowspan; k++) {
-		                		if(rowhidden.containsKey(String.valueOf(row.getRowNum()+k))) {
-		                			rowSpan2 = rowSpan2 - 1;
-		                		}
-		                	}
-		                }
+//		                if(rowspan > 1) {
+//		                	for (int k = 1; k < rowspan; k++) {
+//		                		if(rowhidden.containsKey(String.valueOf(row.getRowNum()+k))) {
+//		                			rowSpan2 = rowSpan2 - 1;
+//		                		}
+//		                	}
+//		                }
 		                if(!coorMergeMap.containsKey(i+"_"+j)) {
 		                	coorMergeMap.put(i+"_"+j, rowSpan2+"_"+colspan);
 		                }
@@ -1561,7 +1566,6 @@ public class PdfTableExcel {
     			int r = Integer.parseInt(cellKey.split("_")[0]);
 	    		int c = Integer.parseInt(cellKey.split("_")[1]);
 	    		if(newCellOriginal.containsKey(cellKey)) {
-	    			System.err.println();
 	    			pdfpCell.setVerticalAlignment(newCellOriginal.get(cellKey).getVerticalAlignment());
 	    			pdfpCell.setHorizontalAlignment(newCellOriginal.get(cellKey).getHorizontalAlignment());
 	    			pdfpCell.setPhrase(newCellOriginal.get(cellKey).getPhrase());
