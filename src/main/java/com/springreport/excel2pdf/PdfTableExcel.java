@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -94,11 +95,15 @@ public class PdfTableExcel {
         Map<String, Integer> splitMergeCellsRowSpan = new HashMap<>();
         Map<String, Integer> splitMergeCellsColSpan = new HashMap<>();
         Map<Integer, List<PdfPCell>> pageHeaderCells = new HashMap<>();
+        Map<PdfPCell, String> pdfPcellCoorMap = null;//pdfpcell对应的单元格坐标
+        Map<String, PdfPCell> coorPdfPcellMap = null;//单元格坐标对应的pdfpcell
+        Map<String, String> coorMergeMap = null;//单元格坐标对应的合并信息，例如1_1:3_2代表1行1列单元格行合并是3，列合并是2
+        Map<String, PdfPCell> newCellOriginal = new HashMap<String, PdfPCell>();//新单元格来源于哪个单元格
         int starty = this.excelObject.getStarty();
         int endy = this.excelObject.getStarty();
         PdfContentByte canvas = this.excelObject.getWriter().getDirectContent();
         JSONArray pageDivider = null;
-        Map<Integer, Integer> pageRows = new HashMap<>();
+        Map<Integer, Integer> pageRows = new LinkedHashMap<>();
         int fixedHeader = this.excelObject.getPrintSettings().getFixedHeader().intValue();
         int fixedHeaderStart = 0;
         float fixedHeaderHeight = 0;//固定行的高度
@@ -147,6 +152,9 @@ public class PdfTableExcel {
 				continue;
 			}else {
 				cells = new ArrayList<PdfPCell>();
+				pdfPcellCoorMap = new LinkedHashMap<PdfPCell, String>();
+				coorPdfPcellMap = new LinkedHashMap<String, PdfPCell>();
+				coorMergeMap = new LinkedHashMap<String, String>();
 				endy = pageDivider.getIntValue(t)+1;
 				for (int i = this.excelObject.getStartx(); i < rows; i++) {
 		        	if(rowhidden.get(String.valueOf(i)) != null)
@@ -253,9 +261,9 @@ public class PdfTableExcel {
 		                	}else {
 		                		if(splitMergeCells.containsKey(i+"_"+j)) {
 		                			addBorderByExcel(pdfpCell, splitMergeCells.get(i+"_"+j));
-		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
-		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
-		                			pdfpCell.setFixedHeight(this.getPixelHeight(splitMergeCellsRowSpan.get(i+"_"+j),row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,splitMergeCellsColSpan.get(i+"_"+j)));
+//		                			pdfpCell.setRowspan(splitMergeCellsRowSpan.get(i+"_"+j));
+//		                			pdfpCell.setColspan(splitMergeCellsColSpan.get(i+"_"+j));
+		                			pdfpCell.setFixedHeight(this.getPixelHeight(1,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,splitMergeCellsColSpan.get(i+"_"+j)));
 		                			Cell firstCell = mergeCells.get(i+"_"+j);
 		                			if(firstCell != null) {
 		                				pdfpCell.setVerticalAlignment(hiddenCell==null?getVAlignByExcel(firstCell.getCellStyle().getVerticalAlignment().getCode()):getVAlignByExcel(hiddenCell.getCellStyle().getVerticalAlignment().getCode()));
@@ -279,11 +287,32 @@ public class PdfTableExcel {
 		                				headerCells.add(pdfpCell);
 		                				if(t == 0) {
 			                				cells.add(pdfpCell);
+			                				pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+			                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
+			                			}else {
+//			                				cells.add(pdfpCell);
+			                				pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+			                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
 			                			}
 		                			}else {
 		                				cells.add(pdfpCell);
+		                				pdfpCell.setFixedHeight(this.getPixelHeight(1,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
+		                				pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+		                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
 		                			}
+		                		}else {
+		                			cells.add(pdfpCell);
+		                			pdfpCell.setFixedHeight(this.getPixelHeight(1,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
+		                			pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+	                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
 		                		}
+		                		if(!coorMergeMap.containsKey(i+"_"+j)) {
+		                			coorMergeMap.put(i+"_"+j, (splitMergeCellsRowSpan.get(i+"_"+j)==null?1:splitMergeCellsRowSpan.get(i+"_"+j))+"_"+(splitMergeCellsColSpan.get(i+"_"+j)==null?1:splitMergeCellsColSpan.get(i+"_"+j)));
+		                		}
+		                		if(t==0 && j == starty)
+				                {
+		                			height = height + pdfpCell.getFixedHeight();
+				                }
 		                		continue;
 		                	}
 		                }
@@ -366,14 +395,17 @@ public class PdfTableExcel {
 		                		}
 		                	}
 		                }
-		                pdfpCell.setColspan(colspan);
-		                pdfpCell.setRowspan(rowSpan2);
+		                if(!coorMergeMap.containsKey(i+"_"+j)) {
+		                	coorMergeMap.put(i+"_"+j, rowSpan2+"_"+colspan);
+		                }
+//		                pdfpCell.setColspan(colspan);
+//		                pdfpCell.setRowspan(rowSpan2);
 //		            	if (sheet.getDefaultRowHeightInPoints() != row.getHeightInPoints()) {
 //		            		pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }else {
 //			            	pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet));
 //			            }
-		                pdfpCell.setFixedHeight(this.getPixelHeight(rowspan,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
+		                pdfpCell.setFixedHeight(this.getPixelHeight(1,row.getRowNum(),sheet,rowhidden,rowHeightsMap,t,cws,(XSSFCellStyle) cell.getCellStyle(),j,starty,pdfpCell,colspan));
 		                addImageByPOICell(pdfpCell, cell, cw);
 		                if(j == starty)
 		                {
@@ -406,15 +438,23 @@ public class PdfTableExcel {
             				headerCells.add(pdfpCell);
             				if(t == 0) {
             					cells.add(pdfpCell);
+            					pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
+            				}else {
+//            					cells.add(pdfpCell);
+            					pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+                				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
             				}
             			}else {
             				cells.add(pdfpCell);
+            				pdfPcellCoorMap.put(pdfpCell, i+"_"+j);
+            				coorPdfPcellMap.put(i+"_"+j, pdfpCell);
             			}
 		            	
-		                if(hiddenCell == null)
-		                {
-		                	j += colspan - 1;
-		                }
+//		                if(hiddenCell == null)
+//		                {
+//		                	j += colspan - 1;
+//		                }
 		            }
 
 		            float rw = 0;
@@ -450,19 +490,25 @@ public class PdfTableExcel {
 //	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
+	            		    Map<String, String> mergedcells = new HashMap<String, String>();
 	            		    if(pageHeaderCells.containsKey(t)) {
 	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
 	            		    	for (PdfPCell pdfpCell : headerCells) {
-		            		    	pdfpCell.setNoWrap(false);
-		            		        table.addCell(pdfpCell);
+	            		    		boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+		            		    	if(addFlag) {
+		            		    		table.addCell(pdfpCell);
+		            		    	}
 		            		        if(xxbtCells.containsKey(pdfpCell)) {
 		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 		        			        }
 		            		    }
 	            		    }
+	            		    
 	            		    for (PdfPCell pdfpCell : cells) {
-	            		    	pdfpCell.setNoWrap(false);
-	            		        table.addCell(pdfpCell);
+	            		    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+	            		    	if(addFlag) {
+	            		    		table.addCell(pdfpCell);
+	            		    	}
 	            		        if(xxbtCells.containsKey(pdfpCell)) {
 	        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 	        			        }
@@ -483,19 +529,24 @@ public class PdfTableExcel {
 //	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
+	            		    Map<String, String> mergedcells = new HashMap<String, String>();
 	            		    if(pageHeaderCells.containsKey(t)) {
 	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
 	            		    	for (PdfPCell pdfpCell : headerCells) {
-		            		    	pdfpCell.setNoWrap(false);
-		            		        table.addCell(pdfpCell);
+	            		    		boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+		            		    	if(addFlag) {
+		            		    		table.addCell(pdfpCell);
+		            		    	}
 		            		        if(xxbtCells.containsKey(pdfpCell)) {
 		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 		        			        }
 		            		    }
 	            		    }
 	            		    for (PdfPCell pdfpCell : cells) {
-	            		    	pdfpCell.setNoWrap(false);
-	            		        table.addCell(pdfpCell);
+	            		    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+	            		    	if(addFlag) {
+	            		    		table.addCell(pdfpCell);
+	            		    	}
 	            		        if(xxbtCells.containsKey(pdfpCell)) {
 	        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 	        			        }
@@ -520,9 +571,12 @@ public class PdfTableExcel {
 				}
 				table.setTotalWidth(excelObject.getTableWidth());
 			    table.setWidthPercentage(100);
+			    Map<String, String> mergedcells = new HashMap<String, String>();
 			    for (PdfPCell pdfpCell : cells) {
-			    	pdfpCell.setNoWrap(false);
-			        table.addCell(pdfpCell);
+			    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+    		    	if(addFlag) {
+    		    		table.addCell(pdfpCell);
+    		    	}
 			        if(xxbtCells.containsKey(pdfpCell)) {
 			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 			        }
@@ -905,9 +959,6 @@ public class PdfTableExcel {
         		pixel = pixel + poiHeight;
     		}
 		}
-    	if(pixel > 15) {
-    		System.err.println();
-    	}
         return pixel;
     }
 
@@ -1496,5 +1547,71 @@ public class PdfTableExcel {
     		font = (XSSFColor) style.getFont().getXSSFColor();
     	}
     	return font;
+    }
+    
+    private boolean processCell(Map<String, String> mergedcells,PdfPCell pdfpCell,Map<PdfPCell, String> pdfPcellCoorMap,
+    		Map<String, PdfPCell> coorPdfPcellMap,Map<String, String> coorMergeMap,Map<Integer, Integer> pageRows,Map<String, PdfPCell> newCellOriginal) {
+    	boolean addFlag = true;
+    	if(pdfPcellCoorMap.containsKey(pdfpCell)) {
+    		pdfpCell.setNoWrap(false);
+    		String cellKey = pdfPcellCoorMap.get(pdfpCell);
+    		if(mergedcells.containsKey(cellKey)) {
+    			addFlag = false;
+    		}else {
+    			int r = Integer.parseInt(cellKey.split("_")[0]);
+	    		int c = Integer.parseInt(cellKey.split("_")[1]);
+	    		if(newCellOriginal.containsKey(cellKey)) {
+	    			System.err.println();
+	    			pdfpCell.setVerticalAlignment(newCellOriginal.get(cellKey).getVerticalAlignment());
+	    			pdfpCell.setHorizontalAlignment(newCellOriginal.get(cellKey).getHorizontalAlignment());
+	    			pdfpCell.setPhrase(newCellOriginal.get(cellKey).getPhrase());
+	    			pdfpCell.setBackgroundColor(newCellOriginal.get(cellKey).getBackgroundColor());
+	    		}
+	    		if(coorMergeMap.containsKey(cellKey)) {
+	    			int pageMaxr = r;
+	    			for (Integer key : pageRows.keySet()) {
+	    				if(r <= key) {
+	    					pageMaxr = key;
+	    					break;
+	    				}
+	    			}
+
+	    			String rowcolspan = coorMergeMap.get(cellKey);
+	    			int rowspan = Integer.parseInt(rowcolspan.split("_")[0]);
+	    			int colspan = Integer.parseInt(rowcolspan.split("_")[1]);
+	    			int rowspan2 = rowspan;
+	    			if((r+rowspan -1) > pageMaxr && pageMaxr - r>0) {
+	    				rowspan2 = pageMaxr - r + 1;
+	    				int newr = pageMaxr+1;
+	    				String newkey = newr+"_"+c;
+	    				int newrowspan = rowspan - rowspan2;
+	    				if(newrowspan > 1 || colspan>1) {
+	    					coorMergeMap.put(newkey, newrowspan+"_"+colspan);
+	    					if(coorPdfPcellMap.containsKey(newkey)) {
+	    						PdfPCell pdfPCell2 = coorPdfPcellMap.get(newkey);
+	    						pdfPCell2.setVerticalAlignment(pdfpCell.getVerticalAlignment());
+	    						pdfPCell2.setHorizontalAlignment(pdfpCell.getHorizontalAlignment());
+	    						pdfPCell2.setPhrase(pdfpCell.getPhrase());
+	    						pdfPCell2.setBackgroundColor(pdfpCell.getBackgroundColor());
+	    					}
+	    				}
+	    				newCellOriginal.put(newkey, pdfpCell);
+	    			}
+	    			pdfpCell.setRowspan(rowspan2);
+	    			pdfpCell.setColspan(colspan);
+	    			if(rowspan2 > 1 || colspan > 1) {
+	    				for (int j = 0; j < rowspan2; j++) {
+							for (int k = 0; k < colspan; k++) {
+								if(j == 0 && k == 0) {
+								}else {
+									mergedcells.put((r+j)+"_"+(c+k), "1");
+								}
+							}
+						}
+	    			}
+	    		}
+    		}
+    	}
+    	return addFlag;
     }
 }
