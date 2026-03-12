@@ -117,9 +117,16 @@ public class ExcelObject {
      * @date 2024-10-13 03:50:46 
      */  
     private Map<String, Object> wrapText;
+    
+    /**  
+	 * @Fields extendParamData : 扩展参数数据
+	 * @author caiyang
+	 * @date 2026-03-10 12:56:10 
+	 */  
+	private JSONObject extendParamData;
 	
     
-    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Object> wrapText){
+    public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Object> wrapText,JSONObject extendParamData){
         this.anchorName = anchorName;
         this.inputStream = inputStream;
         this.excel = new Excel(this.inputStream,this.sheetIndex);
@@ -135,6 +142,7 @@ public class ExcelObject {
         this.imageInfos = imageInfos;
         this.backImages = backImages;
         this.wrapText = wrapText;
+        this.extendParamData = extendParamData;
     }
     
     public ExcelObject(String anchorName , InputStream inputStream,Integer startx,Integer starty,Integer endx,Integer endy,Integer pageType,JSONObject colhidden,JSONObject rowhidden,Integer sheetIndex,JSONObject xxbtScreenshot,PrintSettingsDto printSettings,Map<String, Map<String, Object>> imageInfos,Map<String, String> backImages,Map<String, Object> wrapText){
@@ -309,6 +317,14 @@ public class ExcelObject {
 
 	public void setWrapText(Map<String, Object> wrapText) {
 		this.wrapText = wrapText;
+	}
+
+	public JSONObject getExtendParamData() {
+		return extendParamData;
+	}
+
+	public void setExtendParamData(JSONObject extendParamData) {
+		this.extendParamData = extendParamData;
 	}
 
 //	public Map<String, Integer> getMaxCoordinate() {

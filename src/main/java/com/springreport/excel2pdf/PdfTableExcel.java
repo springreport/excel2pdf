@@ -101,6 +101,10 @@ public class PdfTableExcel {
         Map<String, PdfPCell> newCellOriginal = new HashMap<String, PdfPCell>();//新单元格来源于哪个单元格
         Map<String, CellRangeAddress> cellRangeMap = new HashMap<String, CellRangeAddress>();//sheet页中所有的合并单元格
         this.getSheetMergeRegions(cellRangeMap);
+        JSONObject forcePageBreak = null;
+        if(this.excelObject.getExtendParamData() != null && this.excelObject.getExtendParamData().containsKey("forcePageBreak")) {
+        	forcePageBreak = this.excelObject.getExtendParamData().getJSONObject("forcePageBreak");
+        }
         int starty = this.excelObject.getStarty();
         int endy = this.excelObject.getStarty();
         PdfContentByte canvas = this.excelObject.getWriter().getDirectContent();
@@ -483,121 +487,59 @@ public class PdfTableExcel {
 	                		pageRows.put(i-1, i-1);
 	                		height = rowHeight+fixedHeaderHeight;
 	                		page = page + 1;
+	                		PdfPTable table = new PdfPTable(widths);
+		                	table.setTotalWidth(excelObject.getTableWidth());
+	            		    table.setWidthPercentage(100);
+	            		    cells = createTable(table, cells, i-1, widths, page, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
+	            		    if(forcePageBreak != null && forcePageBreak.containsKey(i+"")) {
+	            		    	pageRows.put(i, i);
+		                		height = fixedHeaderHeight;
+		                		page = page + 1;
+		                		table = new PdfPTable(widths);
+			                	table.setTotalWidth(excelObject.getTableWidth());
+		            		    table.setWidthPercentage(100);
+	            		    	cells = createTable(table, cells, i, widths, page, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
+	            		    }
 	                	}else if(height == this.excelObject.getTableHeight()) {
 	                		pageRows.put(i, i);
 	                		height = fixedHeaderHeight;
 	                		page = page + 1;
+	                		PdfPTable table = new PdfPTable(widths);
+		                	table.setTotalWidth(excelObject.getTableWidth());
+	            		    table.setWidthPercentage(100);
+	            		    cells = createTable(table, cells, i, widths, page, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
+	                	}else if(forcePageBreak != null && forcePageBreak.containsKey(i+"")) {
+	                		pageRows.put(i, i);
+	                		height = fixedHeaderHeight;
+	                		page = page + 1;
+	                		PdfPTable table = new PdfPTable(widths);
+		                	table.setTotalWidth(excelObject.getTableWidth());
+	            		    table.setWidthPercentage(100);
+	            		    cells = createTable(table, cells, i, widths, page, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
+	                	}
+	                	 if(i == this.excelObject.getEndx()&&forcePageBreak != null && !forcePageBreak.containsKey(i+"")) {
+	                		height = fixedHeaderHeight;
+	                		page = page + 1;
+	                		PdfPTable table = new PdfPTable(widths);
+		                	table.setTotalWidth(excelObject.getTableWidth());
+	            		    table.setWidthPercentage(100);
+	            		    cells = createTable(table, cells, i, widths, page, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
 	                	}
 	                }else {
 	                	if(pageRows.containsKey(i))
 	                	{
 	                		PdfPTable table = new PdfPTable(widths);
-//	                		if(fixedHeader == 1) {
-//	        					table.setHeaderRows(headerRows);
-//	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
-	            		    Map<String, String> mergedcells = new HashMap<String, String>();
-	            		    if(pageHeaderCells.containsKey(t)) {
-	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
-	            		    	for (PdfPCell pdfpCell : headerCells) {
-	            		    		boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
-		            		    	if(addFlag) {
-		            		    		table.addCell(pdfpCell);
-		            		    	}
-		            		        if(xxbtCells.containsKey(pdfpCell)) {
-		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
-		        			        }
-		            		    }
-	            		    }
-	            		    
-	            		    for (PdfPCell pdfpCell : cells) {
-	            		    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
-	            		    	if(addFlag) {
-	            		    		table.addCell(pdfpCell);
-	            		    	}
-	            		        if(xxbtCells.containsKey(pdfpCell)) {
-	        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
-	        			        }
-	            		    }
-	            		    try {
-	            		    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-	            		    table.setKeepTogether(true);
-	            		    table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-	            		    result.add(table);
-	            		    cells = new ArrayList<PdfPCell>();
+	            		    cells = createTable(table, cells, i, widths, 2, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
 	                	}else if(i == this.excelObject.getEndx()) {
 	                		PdfPTable table = new PdfPTable(widths);
-//	                		if(fixedHeader == 1) {
-//	        					table.setHeaderRows(headerRows);
-//	        				}
 	                		table.setTotalWidth(excelObject.getTableWidth());
 	            		    table.setWidthPercentage(100);
-	            		    Map<String, String> mergedcells = new HashMap<String, String>();
-	            		    if(pageHeaderCells.containsKey(t)) {
-	            		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
-	            		    	for (PdfPCell pdfpCell : headerCells) {
-	            		    		boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
-		            		    	if(addFlag) {
-		            		    		table.addCell(pdfpCell);
-		            		    	}
-		            		        if(xxbtCells.containsKey(pdfpCell)) {
-		        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
-		        			        }
-		            		    }
-	            		    }
-	            		    for (PdfPCell pdfpCell : cells) {
-	            		    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
-	            		    	if(addFlag) {
-	            		    		table.addCell(pdfpCell);
-	            		    	}
-	            		        if(xxbtCells.containsKey(pdfpCell)) {
-	        			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
-	        			        }
-	            		    }
-	            		    try {
-	            		    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty);
-							} catch (Exception e) {
-								e.printStackTrace();
-							}
-	            		    table.setKeepTogether(true);
-	            		    table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-	            		    result.add(table);
+	            		    cells = createTable(table, cells, i, widths, 2, pageHeaderCells, xxbtCells, t, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, newCellOriginal, pageRows, rowHeightsMap, canvas, result, starty);
 	                	}
 	                }
 		        }
-			}
-			if(t == 0)
-			{
-				PdfPTable table = new PdfPTable(widths);
-				if(fixedHeader == 1) {
-					table.setHeaderRows(headerRows);
-				}
-				table.setTotalWidth(excelObject.getTableWidth());
-			    table.setWidthPercentage(100);
-			    Map<String, String> mergedcells = new HashMap<String, String>();
-			    for (PdfPCell pdfpCell : cells) {
-			    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
-    		    	if(addFlag) {
-    		    		table.addCell(pdfpCell);
-    		    	}
-			        if(xxbtCells.containsKey(pdfpCell)) {
-			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
-			        }
-			    }
-			    try {
-    		    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			    table.setKeepTogether(true);
-			    table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
-//			    table.setSplitLate(false);
-//			    table.setSplitRows(true);
-			    result.add(table);	
 			}
 			starty = endy;
 		}
@@ -1123,6 +1065,58 @@ public class PdfTableExcel {
     	}else {
     		cell.setBorderColorRight(new BaseColor(POIUtil.getBorderRBG(wb, style.getRightBorderColor())));
     	}
+    }
+    
+    private List<PdfPCell> createTable(PdfPTable table,List<PdfPCell> cells,int r,float[] widths,
+    		int page, Map<Integer, List<PdfPCell>> pageHeaderCells,Map<PdfPCell, XxbtDto> xxbtCells,int t,
+    		Map<PdfPCell, String> pdfPcellCoorMap,Map<String, PdfPCell> coorPdfPcellMap,Map<String, String> coorMergeMap,
+    		Map<String, PdfPCell> newCellOriginal,Map<Integer, Integer> pageRows,Map<Integer, Float> rowHeightsMap,
+    		PdfContentByte canvas,List<PdfPTable> result,int starty){
+    	Map<String, String> mergedcells = new HashMap<String, String>();
+    	List<PdfPCell> leftCells = new ArrayList<PdfPCell>();
+    	if(page != 1) {
+	    	if(pageHeaderCells.containsKey(t)) {
+		    	List<PdfPCell> headerCells = pageHeaderCells.get(t);
+		    	for (PdfPCell pdfpCell : headerCells) {
+		    		boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+    		    	if(addFlag) {
+    		    		table.addCell(pdfpCell);
+    		    	}
+    		        if(xxbtCells.containsKey(pdfpCell)) {
+			        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
+			        }
+    		    }
+		    }
+	    }
+    	
+    	for (PdfPCell pdfpCell : cells) {
+	    	String cellKey = pdfPcellCoorMap.get(pdfpCell);
+	    	int cellr = Integer.parseInt(cellKey.split("_")[0]);
+	    	if(cellr>r) {
+	    		leftCells.add(pdfpCell);
+	    		continue;
+	    	}
+	    	boolean addFlag = this.processCell(mergedcells, pdfpCell, pdfPcellCoorMap, coorPdfPcellMap, coorMergeMap, pageRows,newCellOriginal);
+	    	if(addFlag) {
+	    		table.addCell(pdfpCell);
+	    	}
+	        if(xxbtCells.containsKey(pdfpCell)) {
+	        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
+	        }
+	    }
+    	try {
+	    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	    table.setKeepTogether(true);
+	    table.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
+	    result.add(table);
+	    cells = new ArrayList<PdfPCell>();
+	    if(leftCells != null && leftCells.size() > 0) {
+	    	cells.addAll(leftCells);
+	    }
+	    return cells;
     }
 
     protected int getVAlignByExcel(short align) {
