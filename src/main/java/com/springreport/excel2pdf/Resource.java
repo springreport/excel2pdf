@@ -45,6 +45,8 @@ public class Resource {
     		fontName.put("华文新魏", "STXINWEI.TTF");
     		fontName.put("华文行楷", "STXINGKA.TTF");
     		fontName.put("华文隶书", "STLITI.TTF");
+    		fontName.put("Arial", "arial.ttf");
+    		fontName.put("Times New Roman", "times.ttf");
     		fontName.forEach((key,value) -> {
     			byte[] bytes = null;
 				try {
