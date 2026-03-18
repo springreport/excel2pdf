@@ -47,6 +47,8 @@ public class Resource {
     		fontName.put("华文隶书", "STLITI.TTF");
     		fontName.put("Arial", "arial.ttf");
     		fontName.put("Times New Roman", "times.ttf");
+    		fontName.put("微软雅黑", "MicrosoftYaHei-01.ttf");
+    		
     		fontName.forEach((key,value) -> {
     			byte[] bytes = null;
 				try {
@@ -55,7 +57,7 @@ public class Resource {
 					e.printStackTrace();
 				}
     			try {
-					BaseFont baseFont = BaseFont.createFont(value, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED,true,bytes,null);
+    				BaseFont baseFont = BaseFont.createFont(value, BaseFont.IDENTITY_H, BaseFont.NOT_EMBEDDED,true,bytes,null);
 					baseFontMap.put(key, baseFont);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
