@@ -1457,7 +1457,7 @@ public class PdfTableExcel {
     			}
 			}
     		float pictureHeightRatio = imageHeight/height;
-    		if(pictureHeightRatio > pictureWidthRatio) {
+    		if(pictureHeightRatio < pictureWidthRatio) {
     			imageWidth = width * pictureHeightRatio;
     		}else {
     			imageHeight = height * pictureWidthRatio;
