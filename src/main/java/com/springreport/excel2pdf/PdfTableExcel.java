@@ -1121,14 +1121,12 @@ public class PdfTableExcel {
 
     protected int getVAlignByExcel(short align) {
         int result = Element.ALIGN_BOTTOM;
-        if (align == VerticalAlignment.BOTTOM.getCode()) {
-            result = Element.ALIGN_BOTTOM;
-        }
-        if (align == VerticalAlignment.CENTER.getCode()) {
-            result = Element.ALIGN_MIDDLE;
-        }
-        if (align == VerticalAlignment.TOP.getCode()) {
+        if (align == 0) {
             result = Element.ALIGN_TOP;
+        }else if (align == 1) {
+            result = Element.ALIGN_MIDDLE;
+        }else if (align == 2) {
+            result = Element.ALIGN_BOTTOM;
         }
         return result;
     }
@@ -1137,14 +1135,13 @@ public class PdfTableExcel {
         int result = 0;
         if (align == HorizontalAlignment.LEFT.getCode()) {
             result = Element.ALIGN_LEFT;
-        }
-        if (align == HorizontalAlignment.RIGHT.getCode()) {
+        }else if (align == HorizontalAlignment.RIGHT.getCode()) {
             result = Element.ALIGN_RIGHT;
         }
 //        if (align == HorizontalAlignment.JUSTIFY.getCode()) {
 //            result = Element.ALIGN_JUSTIFIED;
 //        }
-        if (align == HorizontalAlignment.CENTER.getCode()) {
+        else if (align == HorizontalAlignment.CENTER.getCode()) {
             result = Element.ALIGN_CENTER;
         }
         return result;
