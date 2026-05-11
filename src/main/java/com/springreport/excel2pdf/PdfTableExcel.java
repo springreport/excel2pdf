@@ -714,6 +714,7 @@ public class PdfTableExcel {
     		}
     		subLength = subLength + xSSFRichTextString.getLengthOfFormattingRun(t);
     	}
+//    	xSSFRichTextString.applyFont(null)
     	return phrase;
     }
 
@@ -1444,13 +1445,13 @@ public class PdfTableExcel {
     		}
     		for (int i = row1; i <= row2; i++) {
     			if(i == row1) {
-    				dy1 = rowHeightsMap.get(i) * dy1Percent;
+    				dy1 = (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i)) * dy1Percent;
     				imageHeight = imageHeight + rowHeightsMap.get(i) - dy1;
     			}else if(i == row2) {
-    				dy2 = rowHeightsMap.get(i) * dy2Percent;
+    				dy2 = (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i)) * dy2Percent;
     				imageHeight = imageHeight + dy2;
     			}else {
-    				imageHeight = imageHeight + rowHeightsMap.get(i);
+    				imageHeight = imageHeight + (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i));
     			}
 			}
     		float pictureHeightRatio = imageHeight/height;
