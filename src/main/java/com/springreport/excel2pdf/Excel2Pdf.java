@@ -1,5 +1,6 @@
 package com.springreport.excel2pdf;
 
+import com.alibaba.fastjson.JSONArray;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 
@@ -146,6 +147,25 @@ public class Excel2Pdf extends PdfTool{
         	List<PdfPTable> tables = this.toCreatePdfTable(this.objects.get(0),getDocument());
         	for (int i = 0; i < tables.size(); i++) {
         		getDocument().add(tables.get(i));
+        		if(this.objects.get(0).getPageImages() != null) {
+        			if(this.objects.get(0).getPageImages().containsKey(i+1)) {
+        				JSONArray images = this.objects.get(0).getPageImages().get(i+1);
+        				PdfContentByte canvas = this.objects.get(0).getWriter().getDirectContentUnder();
+//        				PdfGState gState = new PdfGState();
+//        		        gState.setFillOpacity(0.6f);  // ✅ 关键：设置透明度 30%
+//        		        canvas.saveState();
+//        	            canvas.setGState(gState);
+        				for (int j = 0; j < images.size(); j++) {
+        					int layerNum = images.getJSONObject(j).getIntValue("layer");
+        					PdfLayer layer = new PdfLayer(layerNum+"", this.objects.get(0).getWriter());
+        					Image background = (Image) images.getJSONObject(j).get("background");
+        					canvas.beginLayer(layer);
+        					canvas.addImage(background);
+        					canvas.endLayer();
+        				}
+//        				canvas.restoreState(); 
+        			}
+        		}
         		getDocument().newPage();
 			}
 //            

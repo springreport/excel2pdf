@@ -3,6 +3,7 @@ package com.springreport.excel2pdf;
 import java.io.InputStream;
 import java.util.Map;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -117,6 +118,13 @@ public class ExcelObject {
      * @date 2024-10-13 03:50:46 
      */  
     private Map<String, Object> wrapText;
+    
+    /**  
+     * @Fields pageImages : 每页对应的图片
+     * @author caiyang
+     * @date 2026-05-15 02:08:21 
+     */  
+    private Map<Integer, JSONArray> pageImages;
     
     /**  
 	 * @Fields extendParamData : 扩展参数数据
@@ -325,6 +333,14 @@ public class ExcelObject {
 
 	public void setExtendParamData(JSONObject extendParamData) {
 		this.extendParamData = extendParamData;
+	}
+
+	public Map<Integer, JSONArray> getPageImages() {
+		return pageImages;
+	}
+
+	public void setPageImages(Map<Integer, JSONArray> pageImages) {
+		this.pageImages = pageImages;
 	}
 
 //	public Map<String, Integer> getMaxCoordinate() {

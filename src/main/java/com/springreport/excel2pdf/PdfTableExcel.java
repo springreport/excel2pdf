@@ -774,6 +774,9 @@ public class PdfTableExcel {
     			for (int i = cell.getRowIndex(); i < (cell.getRowIndex()+rowspan); i++) {
 					for (int j = cell.getColumnIndex(); j < (cell.getColumnIndex()+colspan); j++) {
 							Cell mergeCell = this.excel.sheet.getRow(i).getCell(j);
+							if(mergeCell == null) {
+								continue;
+							}
 							poiImage = new POIImage().getCellImage(mergeCell);
 					    	bytes = poiImage.getBytes();
 					    	if(bytes != null) {
@@ -1002,8 +1005,10 @@ public class PdfTableExcel {
     
     protected Font getFontByExcel(XSSFFont font,boolean isSubSup) {
     	short fontSize = 8;
+    	String fontName = "";
     	try {
     		fontSize = font.getFontHeightInPoints();
+    		fontName = font.getFontName();
 		} catch (Exception e) {
 		}
     	if(isSubSup)
@@ -1017,7 +1022,7 @@ public class PdfTableExcel {
         	List<Integer> rgb = this.getColor(color);
         	baseColor = new BaseColor(rgb.get(0),rgb.get(1),rgb.get(2));
         }
-        Font result = new Font(Resource.BASE_FONT_CHINESE, fontSize, Font.NORMAL,baseColor==null?BaseColor.BLACK:baseColor);
+        Font result = new Font(Resource.getFont(fontName), fontSize, Font.NORMAL,baseColor==null?BaseColor.BLACK:baseColor);
         Workbook wb = excel.getWorkbook();
 
 //        int index = style.getFontIndexAsInt();
@@ -1089,7 +1094,8 @@ public class PdfTableExcel {
     		    }
 		    }
 	    }
-    	
+    	Integer str = null ;
+    	Integer edr = null;
     	for (PdfPCell pdfpCell : cells) {
 	    	String cellKey = pdfPcellCoorMap.get(pdfpCell);
 	    	int cellr = Integer.parseInt(cellKey.split("_")[0]);
@@ -1104,9 +1110,15 @@ public class PdfTableExcel {
 	        if(xxbtCells.containsKey(pdfpCell)) {
 	        	drawLine(xxbtCells.get(pdfpCell),table.getAbsoluteWidths(),rowHeightsMap,canvas);
 	        }
+	        if(str == null || cellr < str) {
+	        	str = cellr;
+	        }
+	        if(edr == null || cellr > edr) {
+	        	edr = cellr;
+	        }
 	    }
     	try {
-	    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty);
+	    	drawPicture(excelObject.getImageInfos(), widths, rowHeightsMap, canvas, starty,str,edr,page);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -1382,7 +1394,11 @@ public class PdfTableExcel {
         return result;
     }
     
-    private void drawPicture(Map<String, Map<String, Object>> imageInfos,float[] widths, Map<Integer, Float> rowHeightsMap,PdfContentByte canvas,int starty) throws Exception{
+    private void drawPicture(Map<String, Map<String, Object>> imageInfos,float[] widths, Map<Integer, Float> rowHeightsMap,PdfContentByte canvas,int starty,
+    		int str,int edr,int page) throws Exception{
+    	if(this.excelObject.getPageImages() == null) {
+    		this.excelObject.setPageImages(new HashMap<Integer, JSONArray>());
+    	}
     	float totalWidth = 0;
     	for (int i = 0; i < widths.length; i++) {
     		totalWidth = totalWidth + widths[i];
@@ -1407,6 +1423,11 @@ public class PdfTableExcel {
     		int row1 = (int)value.get("row1");
      		int col2 = (int)value.get("col2");
     		int row2 = (int)value.get("row2");
+    		if((row2 >= str && row2 <= edr) || (row1 >= str && row1 <= edr)) {
+    			
+    		}else {
+    			continue;
+    		}
     		float dy1Percent = Float.valueOf(String.valueOf(value.get("dy1Percent")));
     		float dy2Percent = Float.valueOf(String.valueOf(value.get("dy2Percent")));
     		float dx1Percent = Float.valueOf(String.valueOf(value.get("dx1Percent")));
@@ -1428,6 +1449,9 @@ public class PdfTableExcel {
     		}
     		Image background = Image.getInstance((byte[])value.get("pictureBytes"));
     		for (int i = col1; i <= col2; i++) {
+    			if(i-starty >= widths.length) {
+    				continue;
+    			}
     			if(i == col1) {
     				dx1 = widths[i-starty]*ratio * dx1Percent;
     				imageWidth = imageWidth + widths[i-starty]*ratio - dx1;
@@ -1446,7 +1470,9 @@ public class PdfTableExcel {
     		for (int i = row1; i <= row2; i++) {
     			if(i == row1) {
     				dy1 = (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i)) * dy1Percent;
-    				imageHeight = imageHeight + rowHeightsMap.get(i) - dy1;
+    				if(rowHeightsMap.get(i) != null) {
+    					imageHeight = imageHeight + rowHeightsMap.get(i) - dy1;	
+    				}
     			}else if(i == row2) {
     				dy2 = (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i)) * dy2Percent;
     				imageHeight = imageHeight + dy2;
@@ -1467,25 +1493,38 @@ public class PdfTableExcel {
     			imageHeight = this.excelObject.getTableHeight();
     		}
     		for (int i = 0; i <= (col1-starty); i++) {
+    			if(i >= widths.length) {
+    				continue;
+    			}
 				if(i == col1-starty) {
 					left = left + dx1;
 				}else {
 					left = left + widths[i]*ratio;
 				}
 			}
-    		for (int i = this.excelObject.getStartx(); i <= row1; i++) {
+    		for (int i = str; i <= row1; i++) {
     			if(i == row1) {
     				top = top + dy1;
     			}else {
-    				top = top + rowHeightsMap.get(i);
+    				top = top + (rowHeightsMap.get(i)==null?20f:rowHeightsMap.get(i));
     			}
+    		}
+    		JSONArray images = null;
+    		if(this.excelObject.getPageImages().containsKey(page)) {
+    			images = this.excelObject.getPageImages().get(page);
+    		}else {
+    			images = new JSONArray();
     		}
     		background.setAbsolutePosition(left+this.excelObject.getDocument().leftMargin(), this.excelObject.getDocument().getPageSize().getTop()-this.excelObject.getDocument().topMargin()-imageHeight-top);
     		background.scaleAbsolute(imageWidth, imageHeight);
-    		PdfLayer layer = new PdfLayer(t+"", this.excelObject.getWriter());
-    		canvas.beginLayer(layer);
-    		canvas.addImage(background);
-    		canvas.endLayer();
+    		JSONObject image = new JSONObject();
+    		image.put("background", background);
+    		image.put("layer", t);
+    		images.add(image);
+    		this.excelObject.getPageImages().put(page, images);
+//    		canvas.beginLayer(layer);
+//        	canvas.addImage(background);
+//        	canvas.endLayer();
     	}
     }
     
